@@ -1,0 +1,122 @@
+import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
+import { runAudit } from "@/lib/audit/engine";
+import { buildLiveProviders } from "@/lib/google/providers";
+import { getBusiness, saveAudit } from "@/lib/store";
+import { newAuditSchema, dateRangeToBounds } from "@/lib/validation";
+import { normalizeUrl, generateId } from "@/lib/utils";
+import { DEMO_MODE, capabilities } from "@/lib/config";
+import { DEMO_BUSINESS } from "@/lib/demo/data";
+import type { AuditReport, AuditStep } from "@/lib/types";
+
+// Crawling can take time; allow a generous (but bounded) execution window.
+export const maxDuration = 60;
+
+/**
+ * Kicks off an audit. We persist an initial "running" report immediately, then
+ * process in the background (fire-and-forget) updating progress per step. The
+ * client polls GET /api/audit/[id] to render live status. This keeps the
+ * request fast and the UI responsive.
+ */
+export async function POST(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "INVALID_BODY" }, { status: 400 });
+  }
+
+  const parsed = newAuditSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "VALIDATION_ERROR", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const input = parsed.data;
+
+  const url = normalizeUrl(input.websiteUrl);
+  if (!url) {
+    return NextResponse.json({ error: "INVALID_URL" }, { status: 400 });
+  }
+
+  const business = input.businessId ? await getBusiness(input.businessId) : null;
+  const businessName = business?.businessName ?? new URL(url).hostname.replace(/^www\./, "");
+  const { dateStart, dateEnd } = dateRangeToBounds(input.dateRange, input.dateStart, input.dateEnd);
+
+  // Demo data is used when explicitly requested OR when running a connected
+  // audit without real Google credentials configured.
+  const useDemoData = Boolean(input.demo) || (input.mode === "connected" && !capabilities.hasGoogleAds);
+
+  const id = generateId("audit");
+
+  // Persist a placeholder so polling has something to read immediately.
+  const placeholder: AuditReport = {
+    id,
+    userId: user.id,
+    businessId: business?.id ?? null,
+    businessName,
+    websiteUrl: url,
+    auditMode: input.mode,
+    dateStart,
+    dateEnd,
+    status: "running",
+    scores: { overall: 0, paidSearch: 0, landingPage: 0, tracking: 0, keyword: 0, budgetWaste: 0 },
+    breakdowns: {} as AuditReport["breakdowns"],
+    executiveSummary: "",
+    recommendations: [],
+    abTests: [],
+    crawledPages: [],
+    adsRows: [],
+    ga4Rows: [],
+    searchConsoleRows: [],
+    gtm: null,
+    steps: initialSteps(input.mode),
+    createdAt: new Date().toISOString(),
+    completedAt: null,
+  };
+  await saveAudit(placeholder);
+
+  // Fire-and-forget processing. In dev/single-process this updates the same
+  // in-memory record the poller reads. TODO(production): move to a durable
+  // queue/worker (e.g. Supabase Edge Function, QStash, Inngest) so progress
+  // survives across serverless instances.
+  void (async () => {
+    const report = await runAudit({
+      auditId: id,
+      userId: user.id,
+      business: business ?? (useDemoData ? DEMO_BUSINESS : null),
+      websiteUrl: url,
+      businessName,
+      mode: input.mode,
+      dateStart,
+      dateEnd,
+      useDemoData,
+      providers:
+        input.mode === "connected" && !useDemoData && !DEMO_MODE
+          ? buildLiveProviders(user.id, dateStart, dateEnd)
+          : undefined,
+      onProgress: (r) => saveAudit(r),
+    });
+    await saveAudit(report);
+  })();
+
+  return NextResponse.json({ id });
+}
+
+function initialSteps(mode: string): AuditStep[] {
+  const connected = mode === "connected";
+  return [
+    { key: "crawl", label: "Crawling website", status: "pending" },
+    { key: "ads", label: "Fetching Google Ads data", status: connected ? "pending" : "skipped" },
+    { key: "ga4", label: "Fetching GA4 data", status: connected ? "pending" : "skipped" },
+    { key: "search_console", label: "Fetching Search Console data", status: connected ? "pending" : "skipped" },
+    { key: "gtm", label: "Inspecting GTM tracking setup", status: connected ? "pending" : "skipped" },
+    { key: "scoring", label: "Scoring landing pages & accounts", status: "pending" },
+    { key: "recommendations", label: "Generating recommendations", status: "pending" },
+  ];
+}
+
