@@ -5,9 +5,10 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "SEM Command Center — Turn any website into a paid search action plan",
+  title: "srchr — see what search is costing you",
   description:
-    "Connect your website, Google Ads, GA4, Search Console, and Tag Manager to uncover wasted spend, weak landing pages, broken tracking, and missed keyword opportunities.",
+    "srchr is a search intelligence platform that audits your website, SEO, paid search, landing pages, and conversion tracking to find what is blocking visibility and conversions. srchr.xyz",
+  metadataBase: new URL("https://srchr.xyz"),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

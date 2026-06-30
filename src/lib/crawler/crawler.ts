@@ -20,7 +20,7 @@ const MAX_PAGES = 30;
 const MAX_DEPTH = 2;
 const REQUEST_TIMEOUT_MS = 12000;
 const TOTAL_BUDGET_MS = 55000;
-const USER_AGENT = "FunnlBot/1.0 (+audit; respects-internal-links-only)";
+const USER_AGENT = "srchrBot/1.0 (+audit; respects-internal-links-only)";
 
 type RawPage = Omit<CrawledPage, "id" | "auditId" | "createdAt">;
 

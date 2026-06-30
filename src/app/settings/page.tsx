@@ -138,7 +138,7 @@ export default async function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-brand-greenDark" />
+              <ShieldCheck className="h-5 w-5 text-brand-blueDark" />
               Data &amp; privacy
             </CardTitle>
             <CardDescription>How we handle your account data.</CardDescription>

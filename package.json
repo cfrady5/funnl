@@ -1,8 +1,8 @@
 {
-  "name": "sem-command-center",
+  "name": "srchr",
   "version": "0.1.0",
   "private": true,
-  "description": "SEM Command Center — turn any website into a paid search action plan.",
+  "description": "srchr — search intelligence and marketing audit platform (srchr.xyz).",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

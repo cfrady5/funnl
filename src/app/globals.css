@@ -4,11 +4,12 @@
 
 @layer base {
   :root {
-    --background: 210 40% 99%;
+    /* srchr theme — near-white surfaces, deep navy text, electric blue primary. */
+    --background: 210 40% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
-    --primary: 142 71% 45%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
     --secondary: 215 28% 17%;
     --secondary-foreground: 0 0% 100%;
@@ -20,7 +21,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 142 71% 45%;
+    --ring: 221 83% 53%;
     --radius: 0.75rem;
   }
 
@@ -29,7 +30,7 @@
     --foreground: 210 40% 98%;
     --card: 222 44% 10%;
     --card-foreground: 210 40% 98%;
-    --primary: 142 71% 45%;
+    --primary: 217 91% 60%;
     --primary-foreground: 222 47% 7%;
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
@@ -41,7 +42,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217 33% 18%;
     --input: 217 33% 18%;
-    --ring: 142 71% 45%;
+    --ring: 217 91% 60%;
   }
 
   * {
@@ -58,7 +59,7 @@
     background: radial-gradient(120% 120% at 50% 0%, #111a2e 0%, #0b1220 60%, #070b14 100%);
   }
   .text-gradient-brand {
-    background: linear-gradient(90deg, #4ade80, #22c55e 60%, #3b82f6);
+    background: linear-gradient(90deg, #60a5fa, #2563eb 55%, #1d4ed8);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

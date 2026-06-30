@@ -100,7 +100,7 @@ const togetherColumns = [
     icon: ShieldCheck,
     title: "Ethical, people-first, always",
     description:
-      "funnl recommends fundamentals, not hacks. No tricks, no keyword stuffing, no guarantees of rankings or results — just clear, honest guidance built for real customers and real businesses.",
+      "srchr recommends fundamentals, not hacks. No tricks, no keyword stuffing, no guarantees of rankings or results — just clear, honest guidance built for real customers and real businesses.",
   },
 ];
 
@@ -155,7 +155,7 @@ const aiReadiness = [
     icon: FileSearch,
     title: "Crawlable & accessible",
     description:
-      "AI assistants and generative search can only cite content they can actually reach. funnl checks that your pages are crawlable, indexable, and free of blocking issues.",
+      "AI assistants and generative search can only cite content they can actually reach. srchr checks that your pages are crawlable, indexable, and free of blocking issues.",
   },
   {
     icon: Sparkles,
@@ -228,7 +228,7 @@ export default function LandingPage() {
       {/* Top nav */}
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
         <div className="container flex h-16 items-center justify-between gap-4">
-          <Link href="/" aria-label="funnl home">
+          <Link href="/" aria-label="srchr home">
             <Logo />
           </Link>
           <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
@@ -265,7 +265,7 @@ export default function LandingPage() {
           <div className="container grid items-center gap-12 py-20 md:py-28 lg:grid-cols-[1.1fr_0.9fr]">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/80">
-                <Sparkles className="size-3.5 text-brand-greenLight" />
+                <Sparkles className="size-3.5 text-brand-blueLight" />
                 SEO + PPC + conversion intelligence
               </span>
               <h1 className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
@@ -293,7 +293,7 @@ export default function LandingPage() {
                 </Button>
               </div>
               <p className="mt-5 inline-flex items-center gap-2 text-sm text-white/60">
-                <CheckCircle2 className="size-4 text-brand-greenLight" />
+                <CheckCircle2 className="size-4 text-brand-blueLight" />
                 No Google API access required — start with just your URL.
               </p>
               <dl className="mt-12 grid max-w-md grid-cols-3 gap-6 border-t border-white/10 pt-8">
@@ -312,7 +312,7 @@ export default function LandingPage() {
 
             {/* Stylized report preview */}
             <div className="relative">
-              <div className="absolute -inset-4 rounded-3xl bg-brand-green/10 blur-2xl" aria-hidden="true" />
+              <div className="absolute -inset-4 rounded-3xl bg-brand-blue/10 blur-2xl" aria-hidden="true" />
               <Card className="relative border-white/10 bg-white/[0.04] text-white shadow-2xl backdrop-blur">
                 <CardHeader className="flex-row items-center justify-between space-y-0">
                   <div>
@@ -339,7 +339,7 @@ export default function LandingPage() {
                           </div>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                             <div
-                              className="h-full rounded-full bg-brand-greenLight"
+                              className="h-full rounded-full bg-brand-blueLight"
                               style={{ width: `${row.score}%` }}
                             />
                           </div>
@@ -348,7 +348,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                    <div className="flex items-center gap-2 text-xs font-medium text-brand-greenLight">
+                    <div className="flex items-center gap-2 text-xs font-medium text-brand-blueLight">
                       <LineChart className="size-3.5" />
                       Top leak
                     </div>
@@ -412,16 +412,16 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* What funnl audits */}
+        {/* What srchr audits */}
         <section id="what-we-audit" className="py-20">
           <div className="container">
             <div className="mx-auto max-w-2xl text-center">
-              <Badge variant="secondary">What funnl audits</Badge>
+              <Badge variant="secondary">What srchr audits</Badge>
               <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
                 Your entire search funnel, scored
               </h2>
               <p className="mt-4 text-muted-foreground">
-                funnl looks across SEO, paid search, and conversion tracking —
+                srchr looks across SEO, paid search, and conversion tracking —
                 then tells you exactly where traffic leaks and what to fix first.
               </p>
             </div>
@@ -451,7 +451,7 @@ export default function LandingPage() {
               </h2>
               <p className="mt-4 text-muted-foreground">
                 Organic and paid search aren&apos;t rivals — they reinforce each
-                other. funnl scores both, and the conversion tracking that ties
+                other. srchr scores both, and the conversion tracking that ties
                 them together.
               </p>
             </div>
@@ -517,7 +517,7 @@ export default function LandingPage() {
               </h2>
               <p className="mt-4 text-muted-foreground">
                 Optional, read-only connections deepen the audit. Tokens stay
-                server-side and your Tag Manager access is read-only — funnl
+                server-side and your Tag Manager access is read-only — srchr
                 never changes your account.
               </p>
             </div>
@@ -554,7 +554,7 @@ export default function LandingPage() {
                 Ready for AI search — the honest way
               </h2>
               <p className="mt-4 text-muted-foreground">
-                funnl scores how likely your content is to surface in AI and
+                srchr scores how likely your content is to surface in AI and
                 generative search by measuring real fundamentals — not by
                 chasing fake &ldquo;AEO/GEO&rdquo; hacks.
               </p>
@@ -634,7 +634,7 @@ export default function LandingPage() {
                   </Button>
                 </div>
                 <p className="mt-6 inline-flex items-center gap-2 text-sm text-white/50">
-                  <CheckCircle2 className="size-4 text-brand-greenLight" />
+                  <CheckCircle2 className="size-4 text-brand-blueLight" />
                   No Google API access required — start with just your URL.
                 </p>
               </div>
@@ -668,7 +668,7 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-col items-center justify-between gap-3 border-t pt-6 text-center md:flex-row md:text-left">
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} funnl. All rights reserved.
+              © {new Date().getFullYear()} srchr · srchr.xyz · All rights reserved.
             </p>
             <p className="text-xs text-muted-foreground">
               Recommendations are guidance, not guarantees of rankings or results.

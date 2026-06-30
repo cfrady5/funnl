@@ -111,7 +111,7 @@ export default async function DashboardPage() {
         {audits.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center gap-5 py-14 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-brand-greenDark">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-brand-blueDark">
                 <FileSearch className="h-8 w-8" />
               </div>
               <div className="max-w-md">
@@ -226,7 +226,7 @@ export default async function DashboardPage() {
                   {businesses.length}
                 </p>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-brand-greenDark">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-brand-blueDark">
                 <Building2 className="h-6 w-6" />
               </div>
             </CardContent>
@@ -315,7 +315,7 @@ export default async function DashboardPage() {
           <Link href="/audit/new" className="group">
             <Card className="h-full transition-shadow hover:shadow-md">
               <CardHeader>
-                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-brand-greenDark">
+                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-brand-blueDark">
                   <PlusCircle className="h-5 w-5" />
                 </div>
                 <CardTitle className="flex items-center justify-between">
@@ -376,7 +376,7 @@ export default async function DashboardPage() {
           <CardContent>
             {audits.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-12 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-brand-greenDark">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-brand-blueDark">
                   <FileSearch className="h-7 w-7" />
                 </div>
                 <div>

@@ -20,7 +20,7 @@ export default async function NewAuditPage() {
         <header>
           <h1 className="text-2xl font-bold tracking-tight">Start New Audit</h1>
           <p className="mt-1 text-muted-foreground">
-            Answer a few quick questions and funnl will score your search funnel —
+            Answer a few quick questions and srchr will score your search funnel —
             no Google login required.
           </p>
         </header>

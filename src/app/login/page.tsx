@@ -16,7 +16,7 @@ import {
 import { DEMO_MODE, capabilities } from "@/lib/config";
 
 export const metadata = {
-  title: "Sign in · funnl",
+  title: "Sign in · srchr",
 };
 
 export default function LoginPage() {
@@ -29,7 +29,7 @@ export default function LoginPage() {
     <div className="gradient-navy flex min-h-screen flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
-          <Link href="/" aria-label="funnl home">
+          <Link href="/" aria-label="srchr home">
             <Logo wordmarkClassName="text-white" />
           </Link>
         </div>
@@ -37,7 +37,7 @@ export default function LoginPage() {
         <Card className="shadow-2xl">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">
-              Sign in to funnl
+              Sign in to srchr
             </CardTitle>
             <CardDescription>
               {demoOnly

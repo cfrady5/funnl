@@ -44,14 +44,15 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Brand palette — funnl green + deep navy.
+        // Brand palette — srchr electric blue (primary) + search green (sparing accent).
         brand: {
+          blue: "#2563EB",
+          blueDark: "#1D4ED8",
+          blueLight: "#60A5FA",
           green: "#22C55E",
           greenDark: "#16A34A",
-          greenLight: "#4ADE80",
           navy: "#0B1220",
           navySoft: "#111A2E",
-          blue: "#3B82F6",
         },
       },
       borderRadius: {

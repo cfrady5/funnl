@@ -947,7 +947,7 @@ function StepAnalytics(props: {
 
       {props.mode === "manual" && (
         <p className="rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-          Leave blank if unknown — funnl will flag lower confidence.
+          Leave blank if unknown — srchr will flag lower confidence.
         </p>
       )}
 
@@ -1114,11 +1114,11 @@ function StepReview(props: {
       <SectionHeading
         icon={CheckCircle2}
         title="Review & run"
-        subtitle="Here's what funnl will analyze."
+        subtitle="Here's what srchr will analyze."
       />
 
       <p className="rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-        Don&apos;t know every number? That&apos;s okay. funnl will use what you
+        Don&apos;t know every number? That&apos;s okay. srchr will use what you
         provide and flag areas where tracking is incomplete.
       </p>
 

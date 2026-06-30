@@ -51,7 +51,7 @@ export function AppShell({
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   active
-                    ? "bg-primary/10 text-brand-greenDark"
+                    ? "bg-primary/10 text-brand-blueDark"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
@@ -67,7 +67,7 @@ export function AppShell({
               <FileSearch className="h-3 w-3" /> Demo Mode
             </Badge>
           )}
-          <div className="truncate text-xs text-muted-foreground">{userEmail ?? "demo@funnl.app"}</div>
+          <div className="truncate text-xs text-muted-foreground">{userEmail ?? "demo@srchr.xyz"}</div>
         </div>
       </aside>
 

@@ -1,6 +1,6 @@
-# funnl — find the leaks in your search funnel
+# srchr — find the leaks in your search funnel
 
-**funnl** is an SEO + Google Ads/PPC + conversion-intelligence platform for local
+**srchr** is an SEO + Google Ads/PPC + conversion-intelligence platform for local
 service businesses, agencies, and small companies. Give it a website URL — and,
 when available, connect Google Ads, GA4, Search Console, Google Tag Manager, and
 PageSpeed Insights — and it produces a complete, client-ready search-marketing
@@ -11,7 +11,7 @@ tracking, budget allocation, A/B testing, and a 30/60/90-day roadmap.
 It runs **fully in demo mode with zero credentials**, and progressively unlocks
 real persistence and live Google data as you add configuration.
 
-> funnl gives best-practice **guidance based on observed signals** — not
+> srchr gives best-practice **guidance based on observed signals** — not
 > guarantees of rankings or results. It will never recommend keyword stuffing,
 > thin scaled pages, or fake "AEO/GEO hacks."
 
@@ -21,7 +21,7 @@ real persistence and live Google data as you add configuration.
 
 A production-style Next.js 15 (App Router) SaaS MVP:
 
-- **Landing page** with the funnl story, example insights, and integrations.
+- **Landing page** with the srchr story, example insights, and integrations.
 - **Auth** (Supabase Auth when configured; a demo user otherwise).
 - **Business onboarding** capturing the full business profile.
 - **Integrations** dashboard for Google Ads, GA4, Search Console, GTM (OAuth) +
@@ -130,7 +130,7 @@ See `src/lib/google/*` for the service wrappers and example GAQL queries.
 2. In the **SQL editor**, run the migrations in order:
    - `supabase/migrations/0001_init.sql`
    - `supabase/migrations/0002_rls.sql`
-   - `supabase/migrations/0003_funnl_expansion.sql`
+   - `supabase/migrations/0003_srchr_expansion.sql`
    (Or, with the Supabase CLI: `supabase db push`.)
 3. Copy the URL + anon key + service role key into `.env.local`.
 4. RLS is enabled on every table: users can only read their own rows; the
@@ -163,7 +163,7 @@ See `src/lib/google/*` for the service wrappers and example GAQL queries.
   refuses localhost/private-IP targets.
 - Dashboard routes are protected by `middleware.ts`; Supabase RLS enforces
   per-user data isolation.
-- GTM is **read-only** — funnl inspects and recommends; it never mutates or
+- GTM is **read-only** — srchr inspects and recommends; it never mutates or
   publishes containers (nor Ads/Search Console) in this version.
 - Rate-limiting is marked with `TODO(production)` at the crawl + API layers.
 
@@ -225,5 +225,5 @@ src/
     google/                   oauth, ads, ga4, searchconsole, gtm, providers
     ai/summary.ts             AI/deterministic executive summary
     demo/                     THOY Lawncare dataset + demo report
-supabase/migrations/          0001 schema · 0002 RLS · 0003 funnl expansion
+supabase/migrations/          0001 schema · 0002 RLS · 0003 srchr expansion
 ```
