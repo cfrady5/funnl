@@ -2,9 +2,8 @@
  * Authentication helper.
  *
  * - Supabase configured: reads the real authenticated user from the session.
- * - Demo mode: returns a stable demo user so the whole app is usable without
- *   any auth provider. This keeps the acceptance criterion "I can use demo
- *   mode" true out of the box.
+ * - No auth provider configured: returns a stable local guest profile so the
+ *   app is usable out of the box (URL-only audits need no account).
  *
  * Route protection is handled in middleware.ts; this is the server-side
  * accessor used by pages/actions that need the current user.
@@ -14,18 +13,18 @@ import { DEMO_MODE } from "@/lib/config";
 import { createServerClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/types";
 
-export const DEMO_USER: Profile = {
-  id: "demo_user",
-  email: "demo@semcommandcenter.app",
-  name: "Demo User",
+export const GUEST_USER: Profile = {
+  id: "local-user",
+  email: "",
+  name: "Guest",
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
 };
 
 export async function getCurrentUser(): Promise<Profile | null> {
-  if (DEMO_MODE) return DEMO_USER;
+  if (DEMO_MODE) return GUEST_USER;
   const supabase = await createServerClient();
-  if (!supabase) return DEMO_USER;
+  if (!supabase) return GUEST_USER;
   const {
     data: { user },
   } = await supabase.auth.getUser();

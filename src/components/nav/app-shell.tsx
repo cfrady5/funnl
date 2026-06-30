@@ -58,7 +58,7 @@ export function AppShell({
           })}
         </nav>
         <div className="border-t p-4">
-          <div className="truncate text-xs text-muted-foreground">{userEmail ?? "Signed in"}</div>
+          <div className="truncate text-xs text-muted-foreground">{userEmail || "Signed in"}</div>
         </div>
       </aside>
 
