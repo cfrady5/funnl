@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Info, Lock, Sparkles } from "lucide-react";
+import { ArrowLeft, Info, Lock } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,8 +41,8 @@ export default function LoginPage() {
             </CardTitle>
             <CardDescription>
               {demoOnly
-                ? "This instance is not yet connected to accounts — explore the full product with sample data."
-                : "Use your email and password, or try with sample data."}
+                ? "Continue to explore srchr. Connect Supabase to enable saved accounts."
+                : "Sign in with your email and password."}
             </CardDescription>
           </CardHeader>
 
@@ -50,18 +50,17 @@ export default function LoginPage() {
             {demoOnly ? (
               <>
                 <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm">
-                  <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <Info className="mt-0.5 size-4 shrink-0 text-primary" />
                   <p className="text-muted-foreground">
-                    No account needed. The sample workspace uses an in-memory
-                    store and realistic sample data so you can try every feature
-                    instantly.
+                    Accounts aren&apos;t connected on this instance yet. Continue
+                    to run audits now — URL-only audits work without any setup.
                   </p>
                 </div>
                 <Button asChild size="lg" className="w-full">
-                  <Link href="/dashboard">Use Sample Workspace</Link>
+                  <Link href="/dashboard">Continue to dashboard</Link>
                 </Button>
                 <p className="text-center text-xs text-muted-foreground">
-                  Add Supabase credentials to enable real accounts (see README).
+                  Add Supabase credentials to enable saved accounts (see README).
                 </p>
               </>
             ) : (
@@ -108,7 +107,7 @@ export default function LoginPage() {
                 </div>
 
                 <Button asChild size="lg" variant="outline" className="w-full">
-                  <Link href="/dashboard">Use Sample Workspace</Link>
+                  <Link href="/dashboard">Continue to dashboard</Link>
                 </Button>
               </>
             )}

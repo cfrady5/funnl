@@ -120,7 +120,7 @@ export function AuditProgress({ id, websiteUrl }: { id: string; websiteUrl?: str
             <Link href="/audit/new">Try again</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/reports/demo">View demo report instead</Link>
+            <Link href="/dashboard">Back to dashboard</Link>
           </Button>
         </CardContent>
       </Card>

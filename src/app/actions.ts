@@ -7,13 +7,10 @@ import { onboardingSchema } from "@/lib/validation";
 import { saveBusiness } from "@/lib/store";
 import { generateId, normalizeUrl } from "@/lib/utils";
 import {
-  connectProvider,
   disconnectProvider,
   syncProvider,
   saveSelections,
-  ensureDemoIntegrations,
 } from "@/lib/integrations";
-import { DEMO_MODE, capabilities } from "@/lib/config";
 import type { Business, IntegrationProvider } from "@/lib/types";
 
 function parseList(value: FormDataEntryValue | null): string[] {
@@ -85,19 +82,14 @@ export async function saveOnboardingAction(formData: FormData) {
   redirect("/dashboard?onboarded=1");
 }
 
-// --- Integrations (demo-aware) --------------------------------------------
+// --- Integrations ----------------------------------------------------------
 
 export async function connectIntegrationAction(provider: IntegrationProvider) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-
-  if (DEMO_MODE || !capabilities.hasGoogleOAuth) {
-    // No real OAuth available — simulate a successful connect for the demo.
-    connectProvider(user.id, provider, ["demo"]);
-    revalidatePath("/integrations");
-    return;
-  }
-  // Real OAuth: send the user to Google consent for this provider's scopes.
+  // Always start the real Google OAuth consent flow. The OAuth route builds the
+  // provider-scoped consent URL when GOOGLE_CLIENT_ID/SECRET are configured, or
+  // returns a clear "not configured" message otherwise.
   redirect(`/api/oauth/google?provider=${provider}`);
 }
 
@@ -115,17 +107,10 @@ export async function syncIntegrationAction(provider: IntegrationProvider) {
   revalidatePath("/integrations");
 }
 
-export async function seedDemoIntegrationsAction() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-  ensureDemoIntegrations(user.id);
-  revalidatePath("/integrations");
-}
-
 export async function saveSelectionsAction(formData: FormData) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  saveSelections(user.id, String(formData.get("businessId") ?? "demo_business"), {
+  saveSelections(user.id, String(formData.get("businessId") ?? "default"), {
     googleAdsCustomerId: (formData.get("googleAdsCustomerId") as string) || null,
     ga4PropertyId: (formData.get("ga4PropertyId") as string) || null,
     searchConsoleSiteUrl: (formData.get("searchConsoleSiteUrl") as string) || null,

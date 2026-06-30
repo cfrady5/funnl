@@ -99,9 +99,9 @@ export default async function SettingsPage() {
                 </CardDescription>
               </div>
               {DEMO_MODE ? (
-                <Badge variant="info">Demo Mode</Badge>
+                <Badge variant="info">Local (no database)</Badge>
               ) : (
-                <Badge variant="success">Connected Mode</Badge>
+                <Badge variant="success">Connected</Badge>
               )}
             </div>
           </CardHeader>

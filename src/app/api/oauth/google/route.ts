@@ -11,8 +11,8 @@ import { getCurrentUser } from "@/lib/auth";
  */
 export async function GET(req: Request) {
   if (!capabilities.hasGoogleOAuth) {
-    // Demo mode: there's nothing to authorize. Bounce back with a notice.
-    return NextResponse.redirect(new URL("/integrations?demo=1", req.url));
+    // Google OAuth credentials aren't configured on the server yet.
+    return NextResponse.redirect(new URL("/integrations?error=google_not_configured", req.url));
   }
   const user = await getCurrentUser();
   if (!user) return NextResponse.redirect(new URL("/login", req.url));

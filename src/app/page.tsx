@@ -250,7 +250,7 @@ export default function LandingPage() {
           </nav>
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link href="/reports/demo">View Sample Report</Link>
+              <Link href="/login">Sign in</Link>
             </Button>
             <Button asChild size="sm">
               <Link href="/audit/new">Start Audit</Link>
@@ -282,14 +282,6 @@ export default function LandingPage() {
                     Start Audit
                     <ArrowRight />
                   </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
-                >
-                  <Link href="/reports/demo">View Sample Report</Link>
                 </Button>
               </div>
               <p className="mt-5 inline-flex items-center gap-2 text-sm text-white/60">
@@ -624,14 +616,6 @@ export default function LandingPage() {
                       <ArrowRight />
                     </Link>
                   </Button>
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="outline"
-                    className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
-                  >
-                    <Link href="/reports/demo">View Sample Report</Link>
-                  </Button>
                 </div>
                 <p className="mt-6 inline-flex items-center gap-2 text-sm text-white/50">
                   <CheckCircle2 className="size-4 text-brand-blueLight" />
@@ -647,7 +631,7 @@ export default function LandingPage() {
       <footer className="border-t bg-background">
         <div className="container flex flex-col gap-6 py-10">
           <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-            <Logo />
+            <Link href="/" aria-label="srchr home"><Logo /></Link>
             <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
               <a href="#what-we-audit" className="transition-colors hover:text-foreground">
                 What we audit
@@ -658,9 +642,6 @@ export default function LandingPage() {
               <a href="#integrations" className="transition-colors hover:text-foreground">
                 Connected data
               </a>
-              <Link href="/reports/demo" className="transition-colors hover:text-foreground">
-                Sample report
-              </Link>
               <Link href="/login" className="transition-colors hover:text-foreground">
                 Sign in
               </Link>

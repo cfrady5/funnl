@@ -2,9 +2,7 @@ import {
   AlertTriangle,
   BarChart3,
   CheckCircle2,
-  Database,
   Gauge,
-  Info,
   LineChart,
   Search,
   Tags,
@@ -27,7 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { getCurrentUser } from "@/lib/auth";
 import { DEMO_MODE, capabilities } from "@/lib/config";
 import { getSelections, listIntegrations, providerLabel } from "@/lib/integrations";
-import { seedDemoIntegrationsAction, saveSelectionsAction } from "@/app/actions";
+import { saveSelectionsAction } from "@/app/actions";
 import { relativeTime } from "@/lib/utils";
 import type { GoogleIntegration, IntegrationProvider } from "@/lib/types";
 
@@ -75,11 +73,21 @@ function selectedDetail(
 export default async function IntegrationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ connected?: string; demo?: string; error?: string }>;
+  searchParams: Promise<{ connected?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const user = await getCurrentUser();
-  const userId = user?.id ?? "demo_user";
+  const userId = user?.id ?? "anonymous";
+  const errorMessage =
+    params.error === "google_not_configured"
+      ? "Google sign-in isn't configured on this server yet. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable connecting your Google accounts."
+      : params.error === "invalid_state"
+        ? "The sign-in session expired. Please try connecting again."
+        : params.error === "token_exchange"
+          ? "We couldn't complete the Google connection. Please try again."
+          : params.error
+            ? decodeURIComponent(params.error)
+            : null;
   const integrations = listIntegrations(userId);
   const selections = getSelections(userId);
 
@@ -97,14 +105,9 @@ export default async function IntegrationsPage({
             Connection successful. Your account is now linked.
           </Banner>
         )}
-        {params.demo === "1" && (
-          <Banner variant="info" icon={Info}>
-            Running in demo mode — connections are simulated with sample data.
-          </Banner>
-        )}
-        {params.error && (
+        {errorMessage && (
           <Banner variant="error" icon={AlertTriangle}>
-            {decodeURIComponent(params.error)}
+            {errorMessage}
           </Banner>
         )}
 
@@ -118,29 +121,6 @@ export default async function IntegrationsPage({
             </p>
           </div>
         </header>
-
-        {/* Demo seed card */}
-        {DEMO_MODE && (
-          <Card className="border-primary/30 bg-primary/[0.03]">
-            <CardContent className="flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Database className="size-5" />
-                </div>
-                <div>
-                  <p className="font-semibold">Try it with sample data</p>
-                  <p className="text-sm text-muted-foreground">
-                    Load demo connections for THOY Lawncare to populate all four
-                    providers and run connected audits instantly.
-                  </p>
-                </div>
-              </div>
-              <form action={seedDemoIntegrationsAction} className="shrink-0">
-                <Button type="submit">Load demo connections (THOY Lawncare)</Button>
-              </form>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Integration cards */}
         <div className="grid gap-4 md:grid-cols-2">
@@ -232,7 +212,7 @@ export default async function IntegrationsPage({
           </CardHeader>
           <CardContent>
             <form action={saveSelectionsAction} className="space-y-6">
-              <input type="hidden" name="businessId" value="demo_business" />
+              <input type="hidden" name="businessId" value="default" />
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field
                   id="googleAdsCustomerId"
@@ -272,9 +252,9 @@ export default async function IntegrationsPage({
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                In a live workspace these are dropdowns populated from the Google
-                APIs once you connect each provider. In demo mode they&apos;re
-                pre-filled with the THOY Lawncare sample accounts.
+                Once you connect each provider above, these become dropdowns
+                populated from the Google APIs. You can also enter the IDs
+                manually if you already know them.
               </p>
               <div className="flex justify-end">
                 <Button type="submit">Save selections</Button>

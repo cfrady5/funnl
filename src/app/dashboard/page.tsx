@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   PlusCircle,
   PlugZap,
-  Sparkles,
   AlertTriangle,
   Building2,
   Gauge,
@@ -65,7 +64,7 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   const audits = await listAudits(user?.id ?? null);
   const businesses = await listBusinesses(user?.id ?? null);
-  const integrations = listIntegrations(user?.id ?? "demo_user");
+  const integrations = listIntegrations(user?.id ?? "anonymous");
 
   const averageScore =
     audits.length > 0
@@ -96,9 +95,6 @@ export default async function DashboardPage() {
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Button asChild variant="outline" size="lg">
-              <Link href="/reports/demo">View Sample Report</Link>
-            </Button>
             <Button asChild size="lg">
               <Link href="/audit/new">
                 <PlusCircle /> Start Audit
@@ -128,9 +124,6 @@ export default async function DashboardPage() {
                   <Link href="/audit/new">
                     <PlusCircle /> Start Audit
                   </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <Link href="/reports/demo">View Sample Report</Link>
                 </Button>
               </div>
             </CardContent>
@@ -346,23 +339,6 @@ export default async function DashboardPage() {
               </CardHeader>
             </Card>
           </Link>
-
-          <Link href="/reports/demo" className="group">
-            <Card className="h-full transition-shadow hover:shadow-md">
-              <CardHeader>
-                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-                <CardTitle className="flex items-center justify-between">
-                  View Sample Report
-                  <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                </CardTitle>
-                <CardDescription>
-                  Explore a full sample audit with recommendations.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
         </div>
 
         {/* Recent audits */}
@@ -390,9 +366,6 @@ export default async function DashboardPage() {
                     <Link href="/audit/new">
                       <PlusCircle /> Start Audit
                     </Link>
-                  </Button>
-                  <Button asChild variant="outline">
-                    <Link href="/reports/demo">View Sample Report</Link>
                   </Button>
                 </div>
               </div>
