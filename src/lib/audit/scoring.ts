@@ -16,11 +16,18 @@ import type {
   GtmSnapshot,
   ScoreBreakdown,
   SearchConsoleRow,
+  SiteSignals,
 } from "@/lib/types";
 
+export type CrawledPageInput = Omit<CrawledPage, "id" | "auditId" | "createdAt">;
+
 export interface ScoringInput {
-  business: Pick<Business, "primaryConversionGoal" | "profitableServices" | "monthlyAdBudget"> | null;
-  pages: Array<Omit<CrawledPage, "id" | "auditId" | "createdAt">>;
+  business: Pick<
+    Business,
+    "primaryConversionGoal" | "profitableServices" | "topServices" | "monthlyAdBudget" | "primaryLocation" | "serviceArea"
+  > | null;
+  pages: CrawledPageInput[];
+  siteSignals: SiteSignals | null;
   adsRows: GoogleAdsRow[];
   searchTerms: GoogleAdsRow[];
   ga4Rows: Ga4Row[];

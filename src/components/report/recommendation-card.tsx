@@ -6,6 +6,11 @@ import { SeverityBadge, DifficultyBadge } from "@/components/report/severity-bad
 import type { Recommendation } from "@/lib/types";
 
 const CATEGORY_LABEL: Record<Recommendation["category"], string> = {
+  seo: "SEO",
+  technical_seo: "Technical SEO",
+  content: "Content",
+  local_seo: "Local SEO",
+  ai_search: "AI Search",
   ad_copy: "Ad Copy",
   landing_page: "Landing Page",
   conversion_tracking: "Conversion Tracking",

@@ -21,7 +21,7 @@ export async function getDemoReport(): Promise<AuditReport> {
     business: DEMO_BUSINESS,
     websiteUrl: DEMO_BUSINESS.websiteUrl,
     businessName: DEMO_BUSINESS.businessName,
-    mode: "connected",
+    mode: "full",
     dateStart: "2026-05-31",
     dateEnd: "2026-06-29",
     useDemoData: true,

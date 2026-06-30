@@ -73,6 +73,12 @@ export default async function DashboardPage() {
     (i) => i.status === "connected",
   ).length;
 
+  // Most recent audit (audits are returned newest-first by the store).
+  const latestAudit = audits[0] ?? null;
+  // A small sparkline of recent Search Funnel Scores — oldest to newest, left
+  // to right. We only use overallScore (which we have per audit).
+  const recentScores = audits.slice(0, 12).map((a) => a.overallScore).reverse();
+
   return (
     <AppShell demoMode={DEMO_MODE} userEmail={user?.email}>
       <div className="mx-auto max-w-6xl space-y-8">
@@ -81,7 +87,7 @@ export default async function DashboardPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Your SEM readiness at a glance — scores, issues, and connected data.
+              Your search funnel at a glance — scores, issues, and connected data.
             </p>
           </div>
           <Button asChild size="lg">
@@ -92,12 +98,12 @@ export default async function DashboardPage() {
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           <Card>
             <CardContent className="flex items-center justify-between gap-3 p-5">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Avg SEM Readiness
+                  Average Search Funnel Score
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {audits.length > 0
@@ -112,6 +118,22 @@ export default async function DashboardPage() {
                   <Gauge className="h-6 w-6" />
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="flex items-center justify-between gap-3 p-5">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Total Audits
+                </p>
+                <p className="mt-1 text-3xl font-bold tabular-nums">
+                  {audits.length}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+                <FileSearch className="h-6 w-6" />
+              </div>
             </CardContent>
           </Card>
 
@@ -171,6 +193,83 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
+        {/* Trend + top recommendations */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Search Funnel Score trend</CardTitle>
+              <CardDescription>
+                Recent audits&apos; overall scores, oldest to newest.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentScores.length > 0 ? (
+                <div className="flex h-24 items-end gap-1.5">
+                  {recentScores.map((score, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 rounded-t-sm"
+                      style={{
+                        height: `${Math.max(6, score)}%`,
+                        backgroundColor: scoreColor(score),
+                      }}
+                      title={`Score: ${score}`}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex h-24 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
+                  Run an audit to start tracking your trend.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Top recommendations</CardTitle>
+              <CardDescription>
+                Your prioritized fixes live inside each report.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {latestAudit ? (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    Your most recent audit for{" "}
+                    <span className="font-medium text-foreground">
+                      {latestAudit.businessName}
+                    </span>{" "}
+                    has{" "}
+                    {latestAudit.criticalCount > 0 ? (
+                      <span className="font-semibold text-red-600">
+                        {latestAudit.criticalCount} critical issue
+                        {latestAudit.criticalCount === 1 ? "" : "s"}
+                      </span>
+                    ) : (
+                      <span className="font-medium text-foreground">
+                        no critical issues
+                      </span>
+                    )}{" "}
+                    to review.
+                  </p>
+                  <Button asChild variant="outline" size="sm" className="w-fit">
+                    <Link href={`/reports/${latestAudit.id}`}>
+                      View prioritized recommendations
+                      <ArrowRight />
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No recommendations yet. Run your first audit to see exactly
+                  where your search funnel is leaking and what to fix first.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Quick actions */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Link href="/audit/new" className="group">
@@ -184,7 +283,7 @@ export default async function DashboardPage() {
                   <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
                 </CardTitle>
                 <CardDescription>
-                  Score a website&apos;s paid search readiness in minutes.
+                  Score a website&apos;s entire search funnel in minutes.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -230,7 +329,7 @@ export default async function DashboardPage() {
           <CardHeader>
             <CardTitle>Recent audits</CardTitle>
             <CardDescription>
-              Your latest SEM readiness reports.
+              Your latest Search Funnel reports.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -242,8 +341,8 @@ export default async function DashboardPage() {
                 <div>
                   <p className="font-semibold">No audits yet</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Run your first audit to see where your paid search is
-                    leaking budget.
+                    Run your first audit to see where your search funnel is
+                    leaking traffic and budget.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-3">

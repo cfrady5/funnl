@@ -6,30 +6,10 @@
  * independent — order doesn't matter; the engine sorts the output by priority.
  */
 
-import { generateId, formatCurrency, formatPercent, microsToCurrency } from "@/lib/utils";
-import type { Recommendation, Severity, Difficulty } from "@/lib/types";
+import { formatCurrency, formatPercent, microsToCurrency } from "@/lib/utils";
+import type { Recommendation } from "@/lib/types";
 import { THRESHOLDS, type ScoringInput } from "./scoring";
-
-const SEVERITY_WEIGHT: Record<Severity, number> = {
-  critical: 100,
-  high: 75,
-  medium: 50,
-  low: 25,
-};
-const DIFFICULTY_WEIGHT: Record<Difficulty, number> = {
-  easy: 1,
-  medium: 0.85,
-  hard: 0.7,
-};
-
-function rec(
-  partial: Omit<Recommendation, "id" | "priorityScore"> & { priorityScore?: number },
-): Recommendation {
-  const base = SEVERITY_WEIGHT[partial.severity];
-  const priorityScore =
-    partial.priorityScore ?? Math.round(base * DIFFICULTY_WEIGHT[partial.difficulty]);
-  return { id: generateId("rec"), priorityScore, ...partial };
-}
+import { makeRecommendation as rec } from "./priority";
 
 export function generateRecommendations(input: ScoringInput): Recommendation[] {
   const out: Recommendation[] = [];

@@ -16,7 +16,7 @@ import {
 import { DEMO_MODE, capabilities } from "@/lib/config";
 
 export const metadata = {
-  title: "Sign in · SEM Command Center",
+  title: "Sign in · funnl",
 };
 
 export default function LoginPage() {
@@ -37,7 +37,7 @@ export default function LoginPage() {
         <Card className="shadow-2xl">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">
-              Sign in to SEM Command Center
+              Sign in to funnl
             </CardTitle>
             <CardDescription>
               {demoOnly

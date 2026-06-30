@@ -8,6 +8,7 @@ import {
   LineChart,
   Search,
   Tags,
+  Zap,
 } from "lucide-react";
 import { AppShell } from "@/components/nav/app-shell";
 import { IntegrationActions } from "@/components/integrations/integration-actions";
@@ -24,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { getCurrentUser } from "@/lib/auth";
-import { DEMO_MODE } from "@/lib/config";
+import { DEMO_MODE, capabilities } from "@/lib/config";
 import { getSelections, listIntegrations, providerLabel } from "@/lib/integrations";
 import { seedDemoIntegrationsAction, saveSelectionsAction } from "@/app/actions";
 import { relativeTime } from "@/lib/utils";
@@ -190,6 +191,34 @@ export default async function IntegrationsPage({
               </Card>
             );
           })}
+
+          {/* PageSpeed Insights — API-key based, not OAuth */}
+          <Card className="flex flex-col">
+            <CardHeader className="flex-row items-start justify-between space-y-0">
+              <div className="flex items-start gap-3">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
+                  <Zap className="size-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">PageSpeed Insights</CardTitle>
+                  <CardDescription>
+                    Adds real Lighthouse performance + mobile scores during crawls
+                  </CardDescription>
+                </div>
+              </div>
+              {capabilities.hasPageSpeed ? (
+                <Badge variant="success">Connected</Badge>
+              ) : (
+                <Badge variant="low">Not configured</Badge>
+              )}
+            </CardHeader>
+            <CardContent className="mt-auto space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Set <code className="rounded bg-muted px-1 py-0.5 text-xs">PAGESPEED_API_KEY</code>{" "}
+                in your environment to enable.
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Account selection */}

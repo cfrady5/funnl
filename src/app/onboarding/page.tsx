@@ -96,6 +96,15 @@ export default async function OnboardingPage({
                 />
               </div>
 
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="serviceArea">Service area</Label>
+                <Input
+                  id="serviceArea"
+                  name="serviceArea"
+                  placeholder="Greater Lafayette & Tippecanoe County"
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="monthlyAdBudget">Monthly ad budget</Label>
                 <div className="relative">
@@ -115,6 +124,26 @@ export default async function OnboardingPage({
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="monthlyMarketingBudget">
+                  Monthly marketing budget
+                </Label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    $
+                  </span>
+                  <Input
+                    id="monthlyMarketingBudget"
+                    name="monthlyMarketingBudget"
+                    type="number"
+                    min={0}
+                    step={100}
+                    placeholder="3000"
+                    className="pl-7"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="averageCustomerValue">
                   Average customer value
                 </Label>
@@ -185,6 +214,19 @@ export default async function OnboardingPage({
               </div>
 
               <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="topServices">Top services</Label>
+                <Textarea
+                  id="topServices"
+                  name="topServices"
+                  rows={3}
+                  placeholder="Lawn mowing&#10;Fertilization&#10;Aeration&#10;Leaf removal"
+                />
+                <p className="text-xs text-muted-foreground">
+                  All your services — one per line or comma-separated.
+                </p>
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="profitableServices">Profitable services</Label>
                 <Textarea
                   id="profitableServices"
@@ -208,6 +250,58 @@ export default async function OnboardingPage({
                 <p className="text-xs text-muted-foreground">
                   Service area / target locations — one per line or
                   comma-separated.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Marketing & competition */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Marketing &amp; competition</CardTitle>
+              <CardDescription>
+                Your current marketing posture and who you&apos;re up against.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="marketingStatus">Marketing status</Label>
+                <Select
+                  id="marketingStatus"
+                  name="marketingStatus"
+                  defaultValue="unknown"
+                >
+                  <option value="none">No SEO or PPC</option>
+                  <option value="seo_only">SEO only</option>
+                  <option value="ppc_only">PPC only</option>
+                  <option value="both">Both SEO and PPC</option>
+                  <option value="unknown">Not sure</option>
+                </Select>
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="competitors">Competitors</Label>
+                <Textarea
+                  id="competitors"
+                  name="competitors"
+                  rows={3}
+                  placeholder="competitor-one.com&#10;Competitor Two&#10;competitor-three.com"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Main competitors — one per line or comma-separated.
+                </p>
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="targetCustomer">Target customer</Label>
+                <Textarea
+                  id="targetCustomer"
+                  name="targetCustomer"
+                  rows={3}
+                  placeholder="Homeowners aged 35–65 with larger lots who value reliable, recurring service…"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Describe your ideal customer.
                 </p>
               </div>
             </CardContent>

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Database, Globe, Link2, Loader2, Sparkles } from "lucide-react";
+import { AlertTriangle, Database, Globe, Layers, Link2, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -52,8 +52,9 @@ export function NewAuditForm({
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  // When switching to connected mode without live credentials, force demo data.
-  const forceDemo = mode === "connected" && !canUseLiveData;
+  // When switching to a data-backed mode without live credentials, force demo data.
+  const usesConnectedData = mode !== "url_only";
+  const forceDemo = usesConnectedData && !canUseLiveData;
 
   function handleBusinessChange(id: string) {
     setBusinessId(id);
@@ -70,7 +71,7 @@ export function NewAuditForm({
       return;
     }
 
-    const demo = forceDemo ? true : mode === "connected" ? useDemo : false;
+    const demo = forceDemo ? true : usesConnectedData ? useDemo : false;
 
     const payload: Record<string, unknown> = {
       websiteUrl: websiteUrl.trim(),
@@ -169,26 +170,33 @@ export function NewAuditForm({
       {/* Mode */}
       <div className="space-y-2">
         <Label>Audit type</Label>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <ModeCard
             active={mode === "url_only"}
             onClick={() => setMode("url_only")}
             icon={Link2}
             title="URL-only audit"
-            description="Analyze the site, pages, and paid-search footprint from the URL alone."
+            description="Crawl + SEO from the URL alone — no Google data."
           />
           <ModeCard
             active={mode === "connected"}
             onClick={() => setMode("connected")}
             icon={Database}
-            title="Connected data audit"
-            description="Combine the crawl with Google Ads, GA4, Search Console & GTM data."
+            title="Connected-data audit"
+            description="Pulls connected Google Ads, GA4, Search Console & GTM data."
+          />
+          <ModeCard
+            active={mode === "full"}
+            onClick={() => setMode("full")}
+            icon={Layers}
+            title="Full SEO + PPC audit"
+            description="Everything — crawl, SEO, and all connected Google data."
           />
         </div>
       </div>
 
-      {/* Demo data option (connected mode) */}
-      {mode === "connected" && (
+      {/* Demo data option (connected / full mode) */}
+      {usesConnectedData && (
         <div className="rounded-lg border bg-muted/30 p-4">
           {forceDemo ? (
             <p className="flex items-start gap-2 text-sm text-muted-foreground">

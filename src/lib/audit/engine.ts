@@ -1,16 +1,21 @@
 /**
  * Audit orchestrator.
  *
- * Runs the full pipeline: crawl -> (optionally) pull Google data -> score ->
- * generate recommendations + A/B tests -> AI/deterministic executive summary.
- * Works identically for demo data and live data because all inputs conform to
- * the same types.
+ * Pipeline: crawl → crawlability/index checks → content review → landing review
+ * → (connected) pull Google data → score (SEO + PPC + tracking) → recommendations
+ * + content roadmap + A/B tests → executive summary. Works identically for demo
+ * and live data because every input conforms to the same types.
+ *
+ * Philosophy: diagnose before prescribing; rank every recommendation by
+ * impact × confidence × urgency ÷ difficulty.
  */
 
 import { generateId, clamp } from "@/lib/utils";
 import { crawlSite } from "@/lib/crawler/crawler";
 import { generateExecutiveSummary } from "@/lib/ai/summary";
 import { generateRecommendations } from "./rules";
+import { generateSeoRecommendations } from "./seo-rules";
+import { generateContentOpportunities } from "./content";
 import { generateAbTests } from "./abtests";
 import {
   scoreBudgetWasteRisk,
@@ -20,8 +25,17 @@ import {
   scoreLandingPageReadiness,
   scorePaidSearchEfficiency,
   scoreTrackingReadiness,
+  type CrawledPageInput,
   type ScoringInput,
 } from "./scoring";
+import {
+  scoreSeoFoundation,
+  scoreTechnicalSeo,
+  scoreContentQuality,
+  scoreLocalVisibility,
+  scoreAiSearchReadiness,
+  scoreMeasurementConfidence,
+} from "./seo";
 import {
   DEMO_ADS_ROWS,
   DEMO_GA4_ROWS,
@@ -29,6 +43,7 @@ import {
   DEMO_SEARCH_CONSOLE_ROWS,
   DEMO_SEARCH_TERMS,
   DEMO_CRAWLED_PAGES,
+  DEMO_SITE_SIGNALS,
 } from "@/lib/demo/data";
 import type {
   AuditMode,
@@ -39,8 +54,10 @@ import type {
   Ga4Row,
   GoogleAdsRow,
   GtmSnapshot,
+  ScoreBreakdown,
   ScoreSet,
   SearchConsoleRow,
+  SiteSignals,
 } from "@/lib/types";
 
 export interface RunAuditParams {
@@ -48,60 +65,75 @@ export interface RunAuditParams {
   userId?: string | null;
   business: Pick<
     Business,
-    "id" | "businessName" | "websiteUrl" | "primaryConversionGoal" | "profitableServices" | "monthlyAdBudget"
+    | "id"
+    | "businessName"
+    | "websiteUrl"
+    | "primaryConversionGoal"
+    | "profitableServices"
+    | "topServices"
+    | "monthlyAdBudget"
+    | "primaryLocation"
+    | "serviceArea"
+    | "targetLocations"
   > | null;
   websiteUrl: string;
   businessName: string;
   mode: AuditMode;
   dateStart: string;
   dateEnd: string;
-  /** When true, inject the THOY Lawncare demo dataset for the connected pull. */
   useDemoData: boolean;
-  /** Invoked after each pipeline step so callers can persist live progress. */
-  onProgress?: (report: AuditReport) => void | Promise<void>;
-  /** Live data providers (used when not demo). Each may return [] gracefully. */
   providers?: {
     ads?: () => Promise<{ rows: GoogleAdsRow[]; searchTerms: GoogleAdsRow[] }>;
     ga4?: () => Promise<Ga4Row[]>;
     searchConsole?: () => Promise<SearchConsoleRow[]>;
     gtm?: () => Promise<GtmSnapshot | null>;
   };
+  onProgress?: (report: AuditReport) => void | Promise<void>;
 }
 
 function initialSteps(mode: AuditMode): AuditStep[] {
-  const connected = mode === "connected";
+  const connected = mode !== "url_only";
   return [
     { key: "crawl", label: "Crawling website", status: "pending" },
-    { key: "ads", label: "Fetching Google Ads data", status: connected ? "pending" : "skipped" },
-    { key: "ga4", label: "Fetching GA4 data", status: connected ? "pending" : "skipped" },
-    { key: "search_console", label: "Fetching Search Console data", status: connected ? "pending" : "skipped" },
-    { key: "gtm", label: "Inspecting GTM tracking setup", status: connected ? "pending" : "skipped" },
-    { key: "scoring", label: "Scoring landing pages & accounts", status: "pending" },
+    { key: "crawlability", label: "Checking crawlability & indexability", status: "pending" },
+    { key: "content", label: "Reviewing metadata & content", status: "pending" },
+    { key: "landing", label: "Scoring landing pages", status: "pending" },
+    { key: "ads", label: "Pulling Google Ads data", status: connected ? "pending" : "skipped" },
+    { key: "ga4", label: "Pulling GA4 data", status: connected ? "pending" : "skipped" },
+    { key: "search_console", label: "Pulling Search Console data", status: connected ? "pending" : "skipped" },
+    { key: "gtm", label: "Inspecting GTM setup", status: connected ? "pending" : "skipped" },
+    { key: "scoring", label: "Running scoring engine", status: "pending" },
     { key: "recommendations", label: "Generating recommendations", status: "pending" },
+    { key: "report", label: "Building report", status: "pending" },
   ];
 }
 
-function weightedOverall(s: Omit<ScoreSet, "overall">, connected: boolean): number {
-  // Budget waste is a RISK score: invert it so higher waste lowers overall.
-  const wasteHealth = 100 - s.budgetWaste;
+function weightedOverall(s: Omit<ScoreSet, "searchFunnel">, connected: boolean): number {
+  const wasteHealth = 100 - s.budgetWasteRisk;
+  const seoAvg = (s.seoFoundation + s.technicalSeo + s.contentQuality + s.localVisibility) / 4;
   if (!connected) {
-    // URL-only: weight landing page + tracking heavily.
-    return clamp(Math.round(s.landingPage * 0.55 + s.tracking * 0.25 + s.keyword * 0.2));
+    // URL-only: SEO foundation + content + landing readiness + AI search.
+    return clamp(
+      Math.round(seoAvg * 0.45 + s.landingPage * 0.25 + s.aiSearchReadiness * 0.15 + s.conversionTracking * 0.15),
+    );
   }
+  // Connected/full: balance SEO, PPC, conversion, and measurement.
   return clamp(
     Math.round(
-      s.paidSearch * 0.25 +
-        s.landingPage * 0.22 +
-        s.tracking * 0.2 +
-        s.keyword * 0.13 +
-        wasteHealth * 0.2,
+      seoAvg * 0.26 +
+        s.aiSearchReadiness * 0.06 +
+        s.ppcEfficiency * 0.16 +
+        s.landingPage * 0.16 +
+        s.conversionTracking * 0.12 +
+        s.measurementConfidence * 0.12 +
+        wasteHealth * 0.12,
     ),
   );
 }
 
 export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
   const id = params.auditId ?? generateId("audit");
-  const connected = params.mode === "connected";
+  const connected = params.mode !== "url_only";
   const steps = initialSteps(params.mode);
   const setStep = (key: AuditStep["key"], status: AuditStep["status"], detail?: string) => {
     const step = steps.find((s) => s.key === key);
@@ -109,11 +141,23 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
       step.status = status;
       if (detail) step.detail = detail;
     }
-    // Fire progress callback (best-effort; never blocks the pipeline).
     if (params.onProgress) void params.onProgress(report);
   };
 
   const nowIso = new Date().toISOString();
+  const emptyScores: ScoreSet = {
+    searchFunnel: 0,
+    seoFoundation: 0,
+    technicalSeo: 0,
+    contentQuality: 0,
+    localVisibility: 0,
+    aiSearchReadiness: 0,
+    ppcEfficiency: 0,
+    conversionTracking: 0,
+    landingPage: 0,
+    budgetWasteRisk: 0,
+    measurementConfidence: 0,
+  };
   const report: AuditReport = {
     id,
     userId: params.userId ?? null,
@@ -124,12 +168,14 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
     dateStart: params.dateStart,
     dateEnd: params.dateEnd,
     status: "running",
-    scores: { overall: 0, paidSearch: 0, landingPage: 0, tracking: 0, keyword: 0, budgetWaste: 0 },
+    scores: emptyScores,
     breakdowns: {} as AuditReport["breakdowns"],
     executiveSummary: "",
     recommendations: [],
     abTests: [],
+    contentOpportunities: [],
     crawledPages: [],
+    siteSignals: null,
     adsRows: [],
     ga4Rows: [],
     searchConsoleRows: [],
@@ -142,9 +188,11 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
   try {
     // 1. Crawl ------------------------------------------------------------
     setStep("crawl", "running");
-    let pages: Array<Omit<CrawledPage, "id" | "auditId" | "createdAt">>;
+    let pages: CrawledPageInput[];
+    let siteSignals: SiteSignals | null;
     if (params.useDemoData) {
       pages = DEMO_CRAWLED_PAGES;
+      siteSignals = DEMO_SITE_SIGNALS;
       setStep("crawl", "done", `${pages.length} demo pages`);
     } else {
       const result = await crawlSite(params.websiteUrl);
@@ -156,14 +204,15 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
         return report;
       }
       pages = result.pages;
+      siteSignals = result.siteSignals;
       setStep("crawl", "done", `${pages.length} pages crawled`);
     }
-    report.crawledPages = pages.map((p) => ({
-      ...p,
-      id: generateId("page"),
-      auditId: id,
-      createdAt: new Date().toISOString(),
-    }));
+    report.crawledPages = pages.map((p) => ({ ...p, id: generateId("page"), auditId: id, createdAt: new Date().toISOString() }));
+    report.siteSignals = siteSignals;
+
+    setStep("crawlability", "done", siteSignals ? `https=${siteSignals.https}, sitemap=${siteSignals.sitemapPresent}` : undefined);
+    setStep("content", "done", `${pages.filter((p) => p.title).length}/${pages.length} pages have titles`);
+    setStep("landing", "done");
 
     // 2. Google data ------------------------------------------------------
     let adsRows: GoogleAdsRow[] = [];
@@ -184,7 +233,6 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
         setStep("search_console", "done", `${searchConsoleRows.length} queries (demo)`);
         setStep("gtm", "done", "container inspected (demo)");
       } else {
-        // Live providers — each degrades gracefully on error.
         setStep("ads", "running");
         try {
           const ads = (await params.providers?.ads?.()) ?? { rows: [], searchTerms: [] };
@@ -230,10 +278,14 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
         ? {
             primaryConversionGoal: params.business.primaryConversionGoal,
             profitableServices: params.business.profitableServices,
+            topServices: params.business.topServices,
             monthlyAdBudget: params.business.monthlyAdBudget,
+            primaryLocation: params.business.primaryLocation,
+            serviceArea: params.business.serviceArea,
           }
         : null,
       pages,
+      siteSignals,
       adsRows,
       searchTerms,
       ga4Rows,
@@ -242,58 +294,81 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
       connected,
     };
 
+    const seoFoundation = scoreSeoFoundation(scoringInput);
+    const technicalSeo = scoreTechnicalSeo(scoringInput);
+    const contentQuality = scoreContentQuality(scoringInput);
+    const localVisibility = scoreLocalVisibility(scoringInput);
+    const aiSearchReadiness = scoreAiSearchReadiness(scoringInput);
+    const measurementConfidence = scoreMeasurementConfidence(scoringInput);
+    const ppcEfficiency = scorePaidSearchEfficiency(scoringInput);
+    const conversionTracking = scoreTrackingReadiness(scoringInput);
     const landingPage = scoreLandingPageReadiness(scoringInput);
-    const tracking = scoreTrackingReadiness(scoringInput);
+    const budgetWasteRisk = scoreBudgetWasteRisk(scoringInput);
     const keyword = scoreKeywordOpportunity(scoringInput);
-    const paidSearch = scorePaidSearchEfficiency(scoringInput);
-    const budgetWaste = scoreBudgetWasteRisk(scoringInput);
     const campaignStructure = scoreCampaignStructure(scoringInput);
     const conversionFriction = scoreConversionFriction(scoringInput);
 
-    const partialScores: Omit<ScoreSet, "overall"> = {
-      paidSearch: paidSearch.score,
+    const partial: Omit<ScoreSet, "searchFunnel"> = {
+      seoFoundation: seoFoundation.score,
+      technicalSeo: technicalSeo.score,
+      contentQuality: contentQuality.score,
+      localVisibility: localVisibility.score,
+      aiSearchReadiness: aiSearchReadiness.score,
+      ppcEfficiency: ppcEfficiency.score,
+      conversionTracking: conversionTracking.score,
       landingPage: landingPage.score,
-      tracking: tracking.score,
-      keyword: keyword.score,
-      budgetWaste: budgetWaste.score,
+      budgetWasteRisk: budgetWasteRisk.score,
+      measurementConfidence: measurementConfidence.score,
     };
-    const overall = weightedOverall(partialScores, connected);
-    report.scores = { overall, ...partialScores };
+    const searchFunnel = weightedOverall(partial, connected);
+    report.scores = { searchFunnel, ...partial };
 
     report.breakdowns = {
-      overall: {
-        score: overall,
-        label: "Overall SEM Readiness",
+      searchFunnel: {
+        score: searchFunnel,
+        label: "Search Funnel Score",
         evidence: [
-          `Weighted across ${connected ? "paid search, landing pages, tracking, keywords, and budget efficiency" : "landing pages, tracking, and keyword opportunity"}.`,
+          connected
+            ? "Weighted across SEO foundation, technical SEO, content, local, AI search, PPC efficiency, landing pages, tracking, measurement, and budget."
+            : "Weighted across SEO foundation, technical SEO, content, local, AI search, landing pages, and tracking readiness.",
         ],
         issues: [],
         recommendations: [],
       },
-      paidSearch,
+      seoFoundation,
+      technicalSeo,
+      contentQuality,
+      localVisibility,
+      aiSearchReadiness,
+      ppcEfficiency,
+      conversionTracking,
       landingPage,
-      tracking,
-      keyword,
-      budgetWaste,
+      budgetWasteRisk,
+      measurementConfidence,
     };
-    // Stash the two extra structural breakdowns onto the report via recommendations.
+    // Extra structural breakdowns surfaced in their report sections.
+    const extra = report.breakdowns as Record<string, ScoreBreakdown>;
+    extra.keyword = keyword;
+    extra.campaignStructure = campaignStructure;
+    extra.conversionFriction = conversionFriction;
     setStep("scoring", "done");
 
-    // 4. Recommendations + A/B tests -------------------------------------
+    // 4. Recommendations + content roadmap + A/B tests --------------------
     setStep("recommendations", "running");
-    // Merge structural findings (campaign structure, conversion friction) into
-    // the recommendation generation context by appending their recommendations.
-    const recs = generateRecommendations(scoringInput);
-    report.recommendations = recs;
+    const ppcRecs = generateRecommendations(scoringInput);
+    const seoRecs = generateSeoRecommendations(scoringInput);
+    const all = [...seoRecs, ...ppcRecs].sort((a, b) => b.priorityScore - a.priorityScore);
+    // Dedupe by title.
+    const seen = new Set<string>();
+    report.recommendations = all.filter((r) => (seen.has(r.title) ? false : (seen.add(r.title), true)));
+    report.contentOpportunities = generateContentOpportunities(scoringInput);
     report.abTests = generateAbTests(scoringInput);
-    setStep("recommendations", "done", `${recs.length} recommendations`);
+    setStep("recommendations", "done", `${report.recommendations.length} recommendations`);
 
-    // Keep structural breakdowns accessible for the report UI.
-    (report.breakdowns as Record<string, typeof campaignStructure>).campaignStructure = campaignStructure;
-    (report.breakdowns as Record<string, typeof conversionFriction>).conversionFriction = conversionFriction;
-
-    // 5. Executive summary -----------------------------------------------
+    // 5. Executive summary + report --------------------------------------
+    setStep("report", "running");
     report.executiveSummary = await generateExecutiveSummary(report);
+    setStep("report", "done");
 
     report.status = "completed";
     report.completedAt = new Date().toISOString();

@@ -28,7 +28,7 @@ export async function generateExecutiveSummary(report: AuditReport): Promise<str
     scores: report.scores,
     topRecommendations: report.recommendations.slice(0, 5),
     criticalCount: report.recommendations.filter((r) => r.severity === "critical").length,
-    connected: report.auditMode === "connected",
+    connected: report.auditMode !== "url_only",
   };
 
   if (capabilities.hasAI) {
@@ -44,20 +44,24 @@ export async function generateExecutiveSummary(report: AuditReport): Promise<str
 
 function deterministicSummary(ctx: SummaryContext): string {
   const { scores } = ctx;
+  const overall = scores.searchFunnel;
   const grade =
-    scores.overall >= 80 ? "strong" : scores.overall >= 60 ? "solid but improvable" : scores.overall >= 40 ? "underperforming" : "at significant risk";
+    overall >= 80 ? "strong" : overall >= 60 ? "solid but improvable" : overall >= 40 ? "underperforming" : "at significant risk";
 
   const lines: string[] = [];
   lines.push(
-    `${ctx.businessName}'s paid search readiness scores ${scores.overall}/100 — ${grade}. ` +
-      `This audit reviewed ${ctx.connected ? "live Google Ads, GA4, Search Console, and Tag Manager data" : "the website's structure and conversion readiness"} for ${ctx.websiteUrl}.`,
+    `${ctx.businessName}'s Search Funnel Score is ${overall}/100 — ${grade}. ` +
+      `This audit reviewed ${ctx.connected ? "the website plus live Google Ads, GA4, Search Console, and Tag Manager data" : "the website's SEO foundation, content, and conversion readiness"} for ${ctx.websiteUrl}.`,
   );
 
   const weak: string[] = [];
+  const seoAvg = Math.round((scores.seoFoundation + scores.technicalSeo + scores.contentQuality + scores.localVisibility) / 4);
+  if (seoAvg < 65) weak.push(`SEO foundation & content (~${seoAvg}/100)`);
   if (scores.landingPage < 65) weak.push(`landing-page conversion readiness (${scores.landingPage}/100)`);
-  if (scores.tracking < 65) weak.push(`conversion tracking confidence (${scores.tracking}/100)`);
-  if (scores.paidSearch < 65 && ctx.connected) weak.push(`paid search efficiency (${scores.paidSearch}/100)`);
-  if (scores.budgetWaste > 45 && ctx.connected) weak.push(`elevated budget-waste risk (${scores.budgetWaste}/100)`);
+  if (scores.conversionTracking < 65) weak.push(`conversion tracking (${scores.conversionTracking}/100)`);
+  if (scores.aiSearchReadiness < 65) weak.push(`AI search readiness (${scores.aiSearchReadiness}/100)`);
+  if (scores.ppcEfficiency < 65 && ctx.connected) weak.push(`paid search efficiency (${scores.ppcEfficiency}/100)`);
+  if (scores.budgetWasteRisk > 45 && ctx.connected) weak.push(`elevated budget-waste risk (${scores.budgetWasteRisk}/100)`);
 
   if (weak.length > 0) {
     lines.push(`The biggest drags on performance are ${weak.join(", ")}.`);
@@ -90,7 +94,7 @@ async function aiSummary(ctx: SummaryContext): Promise<string> {
 Business: ${ctx.businessName}
 Website: ${ctx.websiteUrl}
 Mode: ${ctx.connected ? "Connected data audit" : "URL-only audit"}
-Scores (0-100): overall=${ctx.scores.overall}, paidSearch=${ctx.scores.paidSearch}, landingPage=${ctx.scores.landingPage}, tracking=${ctx.scores.tracking}, keyword=${ctx.scores.keyword}, budgetWasteRisk=${ctx.scores.budgetWaste}
+Scores (0-100): searchFunnel=${ctx.scores.searchFunnel}, seoFoundation=${ctx.scores.seoFoundation}, technicalSeo=${ctx.scores.technicalSeo}, contentQuality=${ctx.scores.contentQuality}, localVisibility=${ctx.scores.localVisibility}, aiSearchReadiness=${ctx.scores.aiSearchReadiness}, ppcEfficiency=${ctx.scores.ppcEfficiency}, landingPage=${ctx.scores.landingPage}, conversionTracking=${ctx.scores.conversionTracking}, budgetWasteRisk=${ctx.scores.budgetWasteRisk}, measurementConfidence=${ctx.scores.measurementConfidence}
 Critical issues: ${ctx.criticalCount}
 Top recommendations:
 ${ctx.topRecommendations.map((r) => `- [${r.severity}] ${r.title}: ${r.whyItMatters} Impact: ${r.estimatedImpact}`).join("\n")}`;

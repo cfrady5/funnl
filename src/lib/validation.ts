@@ -5,7 +5,9 @@ export const onboardingSchema = z.object({
   websiteUrl: z.string().min(3, "Website URL is required").max(300),
   industry: z.string().max(120).optional().or(z.literal("")),
   primaryLocation: z.string().max(160).optional().or(z.literal("")),
+  serviceArea: z.string().max(200).optional().or(z.literal("")),
   monthlyAdBudget: z.coerce.number().min(0).max(10_000_000).optional(),
+  monthlyMarketingBudget: z.coerce.number().min(0).max(10_000_000).optional(),
   primaryConversionGoal: z.enum([
     "calls",
     "form_fills",
@@ -16,16 +18,20 @@ export const onboardingSchema = z.object({
     "other",
   ]),
   averageCustomerValue: z.coerce.number().min(0).max(10_000_000).optional(),
+  topServices: z.array(z.string().max(120)).max(15).default([]),
   profitableServices: z.array(z.string().max(120)).max(10).default([]),
   targetLocations: z.array(z.string().max(120)).max(20).default([]),
+  competitors: z.array(z.string().max(160)).max(10).default([]),
+  targetCustomer: z.string().max(500).optional().or(z.literal("")),
   adStatus: z.enum(["not_running", "running", "paused", "unknown"]),
+  marketingStatus: z.enum(["none", "seo_only", "ppc_only", "both", "unknown"]).default("unknown"),
 });
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
 
 export const newAuditSchema = z.object({
   websiteUrl: z.string().min(3, "Website URL is required").max(300),
   businessId: z.string().optional(),
-  mode: z.enum(["url_only", "connected"]),
+  mode: z.enum(["url_only", "connected", "full"]),
   dateRange: z.enum(["7d", "30d", "90d", "custom"]).default("30d"),
   dateStart: z.string().optional(),
   dateEnd: z.string().optional(),

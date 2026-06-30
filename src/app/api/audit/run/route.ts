@@ -47,9 +47,10 @@ export async function POST(req: Request) {
   const businessName = business?.businessName ?? new URL(url).hostname.replace(/^www\./, "");
   const { dateStart, dateEnd } = dateRangeToBounds(input.dateRange, input.dateStart, input.dateEnd);
 
-  // Demo data is used when explicitly requested OR when running a connected
+  // Demo data is used when explicitly requested OR when running a connected/full
   // audit without real Google credentials configured.
-  const useDemoData = Boolean(input.demo) || (input.mode === "connected" && !capabilities.hasGoogleAds);
+  const connectedMode = input.mode !== "url_only";
+  const useDemoData = Boolean(input.demo) || (connectedMode && !capabilities.hasGoogleAds);
 
   const id = generateId("audit");
 
@@ -64,12 +65,26 @@ export async function POST(req: Request) {
     dateStart,
     dateEnd,
     status: "running",
-    scores: { overall: 0, paidSearch: 0, landingPage: 0, tracking: 0, keyword: 0, budgetWaste: 0 },
+    scores: {
+      searchFunnel: 0,
+      seoFoundation: 0,
+      technicalSeo: 0,
+      contentQuality: 0,
+      localVisibility: 0,
+      aiSearchReadiness: 0,
+      ppcEfficiency: 0,
+      conversionTracking: 0,
+      landingPage: 0,
+      budgetWasteRisk: 0,
+      measurementConfidence: 0,
+    },
     breakdowns: {} as AuditReport["breakdowns"],
     executiveSummary: "",
     recommendations: [],
     abTests: [],
+    contentOpportunities: [],
     crawledPages: [],
+    siteSignals: null,
     adsRows: [],
     ga4Rows: [],
     searchConsoleRows: [],
@@ -96,7 +111,7 @@ export async function POST(req: Request) {
       dateEnd,
       useDemoData,
       providers:
-        input.mode === "connected" && !useDemoData && !DEMO_MODE
+        connectedMode && !useDemoData && !DEMO_MODE
           ? buildLiveProviders(user.id, dateStart, dateEnd)
           : undefined,
       onProgress: (r) => saveAudit(r),
@@ -108,15 +123,19 @@ export async function POST(req: Request) {
 }
 
 function initialSteps(mode: string): AuditStep[] {
-  const connected = mode === "connected";
+  const connected = mode !== "url_only";
   return [
     { key: "crawl", label: "Crawling website", status: "pending" },
-    { key: "ads", label: "Fetching Google Ads data", status: connected ? "pending" : "skipped" },
-    { key: "ga4", label: "Fetching GA4 data", status: connected ? "pending" : "skipped" },
-    { key: "search_console", label: "Fetching Search Console data", status: connected ? "pending" : "skipped" },
-    { key: "gtm", label: "Inspecting GTM tracking setup", status: connected ? "pending" : "skipped" },
-    { key: "scoring", label: "Scoring landing pages & accounts", status: "pending" },
+    { key: "crawlability", label: "Checking crawlability & indexability", status: "pending" },
+    { key: "content", label: "Reviewing metadata & content", status: "pending" },
+    { key: "landing", label: "Scoring landing pages", status: "pending" },
+    { key: "ads", label: "Pulling Google Ads data", status: connected ? "pending" : "skipped" },
+    { key: "ga4", label: "Pulling GA4 data", status: connected ? "pending" : "skipped" },
+    { key: "search_console", label: "Pulling Search Console data", status: connected ? "pending" : "skipped" },
+    { key: "gtm", label: "Inspecting GTM setup", status: connected ? "pending" : "skipped" },
+    { key: "scoring", label: "Running scoring engine", status: "pending" },
     { key: "recommendations", label: "Generating recommendations", status: "pending" },
+    { key: "report", label: "Building report", status: "pending" },
   ];
 }
 
