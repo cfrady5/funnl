@@ -8,7 +8,8 @@ import {
   CircleDollarSign,
   FileSearch,
   Gauge,
-  LayoutGrid,
+  Keyboard,
+  Link2,
   LineChart,
   MousePointerClick,
   Quote,
@@ -194,7 +195,31 @@ const audiences = [
 const trustStats = [
   { value: "8", label: "Audited areas" },
   { value: "SEO + PPC", label: "In one report" },
-  { value: "5", label: "Google sources" },
+  { value: "No API", label: "Required to start" },
+];
+
+const auditWays = [
+  {
+    icon: Link2,
+    title: "URL-only",
+    description:
+      "Enter a website and get SEO, technical, landing page, and AI-search findings.",
+    recommended: false,
+  },
+  {
+    icon: Keyboard,
+    title: "Manual analytics",
+    description:
+      "Paste your GA4/Ads/Search Console numbers for a much stronger report — no API access needed.",
+    recommended: true,
+  },
+  {
+    icon: Link2,
+    title: "Connected Google data",
+    description:
+      "Connect Google Ads, GA4, Search Console & GTM for the deepest audit.",
+    recommended: false,
+  },
 ];
 
 export default function LandingPage() {
@@ -207,6 +232,9 @@ export default function LandingPage() {
             <Logo />
           </Link>
           <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
+            <a href="#three-ways" className="transition-colors hover:text-foreground">
+              Three ways
+            </a>
             <a href="#what-we-audit" className="transition-colors hover:text-foreground">
               What we audit
             </a>
@@ -222,10 +250,10 @@ export default function LandingPage() {
           </nav>
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link href="/reports/demo">View Demo Report</Link>
+              <Link href="/reports/demo">View Sample Report</Link>
             </Button>
             <Button asChild size="sm">
-              <Link href="/audit/new">Run an Audit</Link>
+              <Link href="/audit/new">Start Audit</Link>
             </Button>
           </div>
         </div>
@@ -241,18 +269,17 @@ export default function LandingPage() {
                 SEO + PPC + conversion intelligence
               </span>
               <h1 className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
-                Find the leaks in your{" "}
-                <span className="text-gradient-brand">search funnel.</span>
+                Find what is leaking before you{" "}
+                <span className="text-gradient-brand">spend more on marketing.</span>
               </h1>
               <p className="mt-6 max-w-xl text-lg text-white/70">
-                funnl audits your website, SEO, Google Ads, analytics, landing
-                pages, and conversion tracking to show where traffic is being
-                wasted — and what to fix next.
+                Run a website, SEO, PPC, landing page, and tracking audit using
+                your URL, manual analytics data, or connected Google accounts.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
                   <Link href="/audit/new">
-                    Run an Audit
+                    Start Audit
                     <ArrowRight />
                   </Link>
                 </Button>
@@ -262,9 +289,13 @@ export default function LandingPage() {
                   variant="outline"
                   className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
                 >
-                  <Link href="/reports/demo">View Demo Report</Link>
+                  <Link href="/reports/demo">View Sample Report</Link>
                 </Button>
               </div>
+              <p className="mt-5 inline-flex items-center gap-2 text-sm text-white/60">
+                <CheckCircle2 className="size-4 text-brand-greenLight" />
+                No Google API access required — start with just your URL.
+              </p>
               <dl className="mt-12 grid max-w-md grid-cols-3 gap-6 border-t border-white/10 pt-8">
                 {trustStats.map((stat) => (
                   <div key={stat.label}>
@@ -329,6 +360,55 @@ export default function LandingPage() {
                 </CardContent>
               </Card>
             </div>
+          </div>
+        </section>
+
+        {/* Three ways to audit */}
+        <section id="three-ways" className="border-b py-20">
+          <div className="container">
+            <div className="mx-auto max-w-2xl text-center">
+              <Badge variant="secondary">Three ways to audit</Badge>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+                You do not need Google API access to get value
+              </h2>
+              <p className="mt-4 text-muted-foreground">
+                Start with just a URL, add your own numbers for a much stronger
+                report, or connect Google for the deepest audit. Pick the level
+                that fits you.
+              </p>
+            </div>
+            <div className="mt-12 grid gap-6 md:grid-cols-3">
+              {auditWays.map((way) => (
+                <Card
+                  key={way.title}
+                  className={
+                    way.recommended
+                      ? "relative h-full border-primary shadow-md ring-1 ring-primary/20"
+                      : "relative h-full"
+                  }
+                >
+                  {way.recommended ? (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <Badge variant="success">Most popular</Badge>
+                    </div>
+                  ) : null}
+                  <CardHeader>
+                    <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <way.icon className="size-5" />
+                    </div>
+                    <CardTitle className="mt-4 text-lg">{way.title}</CardTitle>
+                    <CardDescription>{way.description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+            <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-muted-foreground">
+              Recommended:{" "}
+              <span className="font-medium text-foreground">
+                Manual analytics
+              </span>{" "}
+              gives most teams the strongest report without any API setup.
+            </p>
           </div>
         </section>
 
@@ -540,7 +620,7 @@ export default function LandingPage() {
                 <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                   <Button asChild size="lg">
                     <Link href="/audit/new">
-                      Run an Audit
+                      Start Audit
                       <ArrowRight />
                     </Link>
                   </Button>
@@ -550,12 +630,12 @@ export default function LandingPage() {
                     variant="outline"
                     className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
                   >
-                    <Link href="/reports/demo">View Demo Report</Link>
+                    <Link href="/reports/demo">View Sample Report</Link>
                   </Button>
                 </div>
                 <p className="mt-6 inline-flex items-center gap-2 text-sm text-white/50">
                   <CheckCircle2 className="size-4 text-brand-greenLight" />
-                  No credentials required — try the demo report.
+                  No Google API access required — start with just your URL.
                 </p>
               </div>
             </div>
@@ -579,7 +659,7 @@ export default function LandingPage() {
                 Connected data
               </a>
               <Link href="/reports/demo" className="transition-colors hover:text-foreground">
-                Demo report
+                Sample report
               </Link>
               <Link href="/login" className="transition-colors hover:text-foreground">
                 Sign in

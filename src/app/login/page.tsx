@@ -20,9 +20,9 @@ export const metadata = {
 };
 
 export default function LoginPage() {
-  // In demo mode (or whenever Supabase isn't configured) the only real path is
-  // the demo button. When Supabase IS configured we still show the demo button
-  // (always functional) plus a styled, clearly-labeled placeholder form.
+  // Without Supabase configured, the only real path is the sample workspace
+  // button. When Supabase IS configured we still show the sample workspace
+  // button (always functional) plus a styled, clearly-labeled placeholder form.
   const demoOnly = DEMO_MODE || !capabilities.hasSupabase;
 
   return (
@@ -41,8 +41,8 @@ export default function LoginPage() {
             </CardTitle>
             <CardDescription>
               {demoOnly
-                ? "This instance is running in demo mode — explore the full product with sample data."
-                : "Use your email and password, or jump straight into the demo."}
+                ? "This instance is not yet connected to accounts — explore the full product with sample data."
+                : "Use your email and password, or try with sample data."}
             </CardDescription>
           </CardHeader>
 
@@ -52,12 +52,13 @@ export default function LoginPage() {
                 <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm">
                   <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
                   <p className="text-muted-foreground">
-                    No account needed. Demo mode uses an in-memory store and
-                    realistic sample data so you can try every feature instantly.
+                    No account needed. The sample workspace uses an in-memory
+                    store and realistic sample data so you can try every feature
+                    instantly.
                   </p>
                 </div>
                 <Button asChild size="lg" className="w-full">
-                  <Link href="/dashboard">Continue in Demo Mode</Link>
+                  <Link href="/dashboard">Use Sample Workspace</Link>
                 </Button>
                 <p className="text-center text-xs text-muted-foreground">
                   Add Supabase credentials to enable real accounts (see README).
@@ -107,7 +108,7 @@ export default function LoginPage() {
                 </div>
 
                 <Button asChild size="lg" variant="outline" className="w-full">
-                  <Link href="/dashboard">Continue in Demo Mode</Link>
+                  <Link href="/dashboard">Use Sample Workspace</Link>
                 </Button>
               </>
             )}

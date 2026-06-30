@@ -28,10 +28,113 @@ export const onboardingSchema = z.object({
 });
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
 
+const optNum = z.coerce.number().optional();
+const optStr = z.string().max(300).optional();
+const optBool = z.boolean().optional();
+
+/** Permissive schema for user-entered analytics. Every field is optional. */
+export const manualAnalyticsSchema = z.object({
+  businessContext: z
+    .object({
+      runningGoogleAds: z.enum(["yes", "no", "paused", "unsure"]).optional(),
+      doingSeo: z.enum(["yes", "no", "somewhat", "unsure"]).optional(),
+      monthlyAdsBudget: optNum,
+      monthlySeoBudget: optNum,
+      averageCustomerValue: optNum,
+      closeRate: optNum,
+      mostImportantConversion: optStr,
+      targetLocations: optStr,
+      competitors: optStr,
+    })
+    .partial()
+    .default({}),
+  websiteMetrics: z
+    .object({
+      sessions: optNum,
+      users: optNum,
+      organicSessions: optNum,
+      paidSessions: optNum,
+      conversions: optNum,
+      conversionRate: optNum,
+      topLandingPageUrl: optStr,
+      topLandingPageSessions: optNum,
+      topLandingPageConversions: optNum,
+      bounceOrEngagementRate: optNum,
+      mostImportantEvent: optStr,
+      formsTracked: optBool,
+      phoneClicksTracked: optBool,
+      bookingsOrPurchasesTracked: optBool,
+      hasThankYouPages: optBool,
+    })
+    .partial()
+    .default({}),
+  ppcMetrics: z
+    .object({
+      monthlySpend: optNum,
+      impressions: optNum,
+      clicks: optNum,
+      ctr: optNum,
+      avgCpc: optNum,
+      conversions: optNum,
+      costPerConversion: optNum,
+      conversionRate: optNum,
+      topCampaign: optStr,
+      topAdGroup: optStr,
+      topKeyword: optStr,
+      worstKeyword: optStr,
+      brandedSeparated: optBool,
+      servicesSeparated: optBool,
+      negativeKeywordsUsed: optBool,
+      adExtensionsUsed: optBool,
+      trafficDestination: z.enum(["homepage", "dedicated", "mixed"]).optional(),
+    })
+    .partial()
+    .default({}),
+  seoMetrics: z
+    .object({
+      organicClicks: optNum,
+      organicImpressions: optNum,
+      organicCtr: optNum,
+      averagePosition: optNum,
+      topQuery: optStr,
+      topPage: optStr,
+      highImpressionLowClickQuery: optStr,
+      highImpressionLowCtrPage: optStr,
+      hasServicePages: optBool,
+      hasLocationPages: optBool,
+      hasBlog: optBool,
+      hasGoogleBusinessProfile: optBool,
+    })
+    .partial()
+    .default({}),
+  trackingMetrics: z
+    .object({
+      analyticsInstalled: optBool,
+      gtmInstalled: optBool,
+      adsConversionTracking: optBool,
+      phoneCallTracking: optBool,
+      formTracking: optBool,
+      bookingPurchaseTracking: optBool,
+      duplicateConversionsPossible: optBool,
+      knowsQualifiedLeadSources: optBool,
+    })
+    .partial()
+    .default({}),
+  knownIssues: z.string().max(2000).optional(),
+  notes: z.string().max(2000).optional(),
+});
+
 export const newAuditSchema = z.object({
   websiteUrl: z.string().min(3, "Website URL is required").max(300),
   businessId: z.string().optional(),
-  mode: z.enum(["url_only", "connected", "full"]),
+  // Inline business context (from the intake wizard) — used when no saved business.
+  businessName: z.string().max(120).optional(),
+  industry: z.string().max(120).optional(),
+  primaryLocation: z.string().max(160).optional(),
+  serviceArea: z.string().max(200).optional(),
+  topServices: z.array(z.string().max(120)).max(15).optional(),
+  profitableService: z.string().max(160).optional(),
+  mode: z.enum(["url_only", "manual", "connected", "full"]),
   dateRange: z.enum(["7d", "30d", "90d", "custom"]).default("30d"),
   dateStart: z.string().optional(),
   dateEnd: z.string().optional(),
@@ -48,6 +151,7 @@ export const newAuditSchema = z.object({
     .optional(),
   notes: z.string().max(1000).optional(),
   demo: z.boolean().optional(),
+  manualInput: manualAnalyticsSchema.optional(),
 });
 export type NewAuditInput = z.infer<typeof newAuditSchema>;
 

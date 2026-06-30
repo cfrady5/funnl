@@ -8,6 +8,7 @@ import {
   Gauge,
   ArrowRight,
   FileSearch,
+  Keyboard,
 } from "lucide-react";
 import { AppShell } from "@/components/nav/app-shell";
 import { Button } from "@/components/ui/button";
@@ -36,11 +37,15 @@ import { formatDate, relativeTime } from "@/lib/utils";
 import type { AuditMode, AuditStatus } from "@/lib/types";
 
 function modeBadge(mode: AuditMode) {
-  return mode === "connected" ? (
-    <Badge variant="success">Connected</Badge>
-  ) : (
-    <Badge variant="secondary">URL only</Badge>
-  );
+  switch (mode) {
+    case "connected":
+    case "full":
+      return <Badge variant="success">Connected</Badge>;
+    case "manual":
+      return <Badge variant="info">Manual data</Badge>;
+    default:
+      return <Badge variant="secondary">URL only</Badge>;
+  }
 }
 
 function statusBadge(status: AuditStatus) {
@@ -90,12 +95,47 @@ export default async function DashboardPage() {
               Your search funnel at a glance — scores, issues, and connected data.
             </p>
           </div>
-          <Button asChild size="lg">
-            <Link href="/audit/new">
-              <PlusCircle /> Run New Audit
-            </Link>
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button asChild variant="outline" size="lg">
+              <Link href="/reports/demo">View Sample Report</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/audit/new">
+                <PlusCircle /> Start Audit
+              </Link>
+            </Button>
+          </div>
         </div>
+
+        {/* Empty state — shown only before the first audit */}
+        {audits.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center gap-5 py-14 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-brand-greenDark">
+                <FileSearch className="h-8 w-8" />
+              </div>
+              <div className="max-w-md">
+                <p className="text-lg font-semibold">
+                  Run your first audit to find the leaks in your search funnel.
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Start with just a URL, or enter your own numbers manually — no
+                  Google access required.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Button asChild size="lg">
+                  <Link href="/audit/new">
+                    <PlusCircle /> Start Audit
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link href="/reports/demo">View Sample Report</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
 
         {/* Stat cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
@@ -125,7 +165,7 @@ export default async function DashboardPage() {
             <CardContent className="flex items-center justify-between gap-3 p-5">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Total Audits
+                  Audits run
                 </p>
                 <p className="mt-1 text-3xl font-bold tabular-nums">
                   {audits.length}
@@ -141,7 +181,7 @@ export default async function DashboardPage() {
             <CardContent className="flex items-center justify-between gap-3 p-5">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Critical Issues
+                  Critical recommendations
                 </p>
                 <p
                   className="mt-1 text-3xl font-bold tabular-nums"
@@ -279,7 +319,7 @@ export default async function DashboardPage() {
                   <PlusCircle className="h-5 w-5" />
                 </div>
                 <CardTitle className="flex items-center justify-between">
-                  Run New Audit
+                  Start Audit
                   <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
                 </CardTitle>
                 <CardDescription>
@@ -289,18 +329,19 @@ export default async function DashboardPage() {
             </Card>
           </Link>
 
-          <Link href="/integrations" className="group">
+          <Link href="/audit/new" className="group">
             <Card className="h-full transition-shadow hover:shadow-md">
               <CardHeader>
                 <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                  <PlugZap className="h-5 w-5" />
+                  <Keyboard className="h-5 w-5" />
                 </div>
                 <CardTitle className="flex items-center justify-between">
-                  Connect Google
+                  Manual data audit
                   <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
                 </CardTitle>
                 <CardDescription>
-                  Link Google Ads, GA4, Search Console &amp; Tag Manager.
+                  No Google access? Enter your numbers manually for a stronger
+                  report.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -313,7 +354,7 @@ export default async function DashboardPage() {
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <CardTitle className="flex items-center justify-between">
-                  View Demo Report
+                  View Sample Report
                   <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
                 </CardTitle>
                 <CardDescription>
@@ -341,18 +382,17 @@ export default async function DashboardPage() {
                 <div>
                   <p className="font-semibold">No audits yet</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Run your first audit to see where your search funnel is
-                    leaking traffic and budget.
+                    Run your first audit to find the leaks in your search funnel.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   <Button asChild>
                     <Link href="/audit/new">
-                      <PlusCircle /> Run your first audit
+                      <PlusCircle /> Start Audit
                     </Link>
                   </Button>
                   <Button asChild variant="outline">
-                    <Link href="/reports/demo">Or view the demo report</Link>
+                    <Link href="/reports/demo">View Sample Report</Link>
                   </Button>
                 </div>
               </div>

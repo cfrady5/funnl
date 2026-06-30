@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { runAudit } from "@/lib/audit/engine";
 import { buildLiveProviders } from "@/lib/google/providers";
-import { getBusiness, saveAudit } from "@/lib/store";
+import { getBusiness, saveAudit, saveBusiness } from "@/lib/store";
 import { newAuditSchema, dateRangeToBounds } from "@/lib/validation";
 import { normalizeUrl, generateId } from "@/lib/utils";
 import { DEMO_MODE, capabilities } from "@/lib/config";
@@ -43,14 +43,45 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "INVALID_URL" }, { status: 400 });
   }
 
-  const business = input.businessId ? await getBusiness(input.businessId) : null;
+  const savedBusiness = input.businessId ? await getBusiness(input.businessId) : null;
+  // Build a transient business from inline intake context when none is saved,
+  // so scoring has business signals (services, location) even without Supabase.
+  const business =
+    savedBusiness ??
+    (input.businessName
+      ? {
+          id: generateId("biz"),
+          userId: user.id,
+          businessName: input.businessName,
+          websiteUrl: url,
+          industry: input.industry ?? null,
+          primaryLocation: input.primaryLocation ?? null,
+          serviceArea: input.serviceArea ?? null,
+          monthlyAdBudget: input.manualInput?.businessContext.monthlyAdsBudget ?? null,
+          monthlyMarketingBudget: input.manualInput?.businessContext.monthlySeoBudget ?? null,
+          primaryConversionGoal: input.primaryGoal ?? null,
+          averageCustomerValue: input.manualInput?.businessContext.averageCustomerValue ?? null,
+          topServices: input.topServices ?? [],
+          profitableServices: input.profitableService ? [input.profitableService] : [],
+          targetLocations: input.serviceArea ? [input.serviceArea] : [],
+          competitors: input.manualInput?.businessContext.competitors
+            ? [input.manualInput.businessContext.competitors]
+            : [],
+          targetCustomer: null,
+          adStatus: "unknown" as const,
+          marketingStatus: "unknown" as const,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      : null);
   const businessName = business?.businessName ?? new URL(url).hostname.replace(/^www\./, "");
   const { dateStart, dateEnd } = dateRangeToBounds(input.dateRange, input.dateStart, input.dateEnd);
 
   // Demo data is used when explicitly requested OR when running a connected/full
-  // audit without real Google credentials configured.
-  const connectedMode = input.mode !== "url_only";
-  const useDemoData = Boolean(input.demo) || (connectedMode && !capabilities.hasGoogleAds);
+  // audit without real Google credentials configured. Manual mode never uses demo.
+  const manualMode = input.mode === "manual";
+  const connectedMode = input.mode === "connected" || input.mode === "full";
+  const useDemoData = !manualMode && (Boolean(input.demo) || (connectedMode && !capabilities.hasGoogleAds));
 
   const id = generateId("audit");
 
@@ -80,11 +111,13 @@ export async function POST(req: Request) {
     },
     breakdowns: {} as AuditReport["breakdowns"],
     executiveSummary: "",
+    summary: { diagnosis: "", mainLeak: null, bestQuickWin: null, biggestRisk: null },
     recommendations: [],
     abTests: [],
     contentOpportunities: [],
     crawledPages: [],
     siteSignals: null,
+    manualInput: input.manualInput ?? null,
     adsRows: [],
     ga4Rows: [],
     searchConsoleRows: [],
@@ -94,6 +127,10 @@ export async function POST(req: Request) {
     completedAt: null,
   };
   await saveAudit(placeholder);
+  // Persist a transient business so it appears on the dashboard.
+  if (business && !savedBusiness) {
+    void saveBusiness(business);
+  }
 
   // Fire-and-forget processing. In dev/single-process this updates the same
   // in-memory record the poller reads. TODO(production): move to a durable
@@ -110,6 +147,7 @@ export async function POST(req: Request) {
       dateStart,
       dateEnd,
       useDemoData,
+      manualInput: input.manualInput ?? null,
       providers:
         connectedMode && !useDemoData && !DEMO_MODE
           ? buildLiveProviders(user.id, dateStart, dateEnd)

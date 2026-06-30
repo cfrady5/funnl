@@ -17,6 +17,7 @@ import { generateRecommendations } from "./rules";
 import { generateSeoRecommendations } from "./seo-rules";
 import { generateContentOpportunities } from "./content";
 import { generateAbTests } from "./abtests";
+import { manualToSyntheticData, generateManualRecommendations, manualHasData } from "./manual";
 import {
   scoreBudgetWasteRisk,
   scoreCampaignStructure,
@@ -54,6 +55,9 @@ import type {
   Ga4Row,
   GoogleAdsRow,
   GtmSnapshot,
+  ManualAnalyticsInput,
+  Recommendation,
+  ReportSummary,
   ScoreBreakdown,
   ScoreSet,
   SearchConsoleRow,
@@ -82,6 +86,8 @@ export interface RunAuditParams {
   dateStart: string;
   dateEnd: string;
   useDemoData: boolean;
+  /** User-entered analytics for a manual-mode audit. */
+  manualInput?: ManualAnalyticsInput | null;
   providers?: {
     ads?: () => Promise<{ rows: GoogleAdsRow[]; searchTerms: GoogleAdsRow[] }>;
     ga4?: () => Promise<Ga4Row[]>;
@@ -171,11 +177,13 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
     scores: emptyScores,
     breakdowns: {} as AuditReport["breakdowns"],
     executiveSummary: "",
+    summary: { diagnosis: "", mainLeak: null, bestQuickWin: null, biggestRisk: null },
     recommendations: [],
     abTests: [],
     contentOpportunities: [],
     crawledPages: [],
     siteSignals: null,
+    manualInput: params.manualInput ?? null,
     adsRows: [],
     ga4Rows: [],
     searchConsoleRows: [],
@@ -184,6 +192,10 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
     createdAt: nowIso,
     completedAt: null,
   };
+
+  // Whether the user gave us enough manual data to produce a report even if
+  // the live crawl can't be completed.
+  const manualMode = params.mode === "manual" && manualHasData(params.manualInput);
 
   try {
     // 1. Crawl ------------------------------------------------------------
@@ -197,15 +209,25 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
     } else {
       const result = await crawlSite(params.websiteUrl);
       if (result.error || result.pages.length === 0) {
-        setStep("crawl", "error", result.error ?? "No pages crawled");
-        report.status = "failed";
-        report.error = result.error ?? "CRAWL_FAILED";
-        report.completedAt = new Date().toISOString();
-        return report;
+        // If the user supplied manual data, don't throw the whole audit away
+        // because the site was briefly unreachable — continue with what we have
+        // and flag the crawl as incomplete (lower confidence on crawl findings).
+        if (manualMode) {
+          setStep("crawl", "error", "Site could not be crawled — continuing with your reported data.");
+          pages = [];
+          siteSignals = null;
+        } else {
+          setStep("crawl", "error", result.error ?? "No pages crawled");
+          report.status = "failed";
+          report.error = result.error ?? "CRAWL_FAILED";
+          report.completedAt = new Date().toISOString();
+          return report;
+        }
+      } else {
+        pages = result.pages;
+        siteSignals = result.siteSignals;
+        setStep("crawl", "done", `${pages.length} pages crawled`);
       }
-      pages = result.pages;
-      siteSignals = result.siteSignals;
-      setStep("crawl", "done", `${pages.length} pages crawled`);
     }
     report.crawledPages = pages.map((p) => ({ ...p, id: generateId("page"), auditId: id, createdAt: new Date().toISOString() }));
     report.siteSignals = siteSignals;
@@ -221,7 +243,18 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
     let searchConsoleRows: SearchConsoleRow[] = [];
     let gtm: GtmSnapshot | null = null;
 
-    if (connected) {
+    if (manualMode && params.manualInput) {
+      // Manual analytics audit: synthesize engine-shaped rows from user input.
+      const syn = manualToSyntheticData(params.manualInput, params.websiteUrl);
+      adsRows = syn.adsRows;
+      ga4Rows = syn.ga4Rows;
+      searchConsoleRows = syn.searchConsoleRows;
+      gtm = syn.gtm;
+      setStep("ads", syn.hasPpc ? "done" : "skipped", syn.hasPpc ? "from your reported data" : "no PPC data entered");
+      setStep("ga4", syn.hasWeb ? "done" : "skipped", syn.hasWeb ? "from your reported data" : "no website data entered");
+      setStep("search_console", syn.hasSeo ? "done" : "skipped", syn.hasSeo ? "from your reported data" : "no SEO data entered");
+      setStep("gtm", syn.hasTracking ? "done" : "skipped", syn.hasTracking ? "from your reported tracking" : "no tracking data entered");
+    } else if (connected) {
       if (params.useDemoData) {
         adsRows = DEMO_ADS_ROWS;
         searchTerms = DEMO_SEARCH_TERMS;
@@ -357,7 +390,13 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
     setStep("recommendations", "running");
     const ppcRecs = generateRecommendations(scoringInput);
     const seoRecs = generateSeoRecommendations(scoringInput);
-    const all = [...seoRecs, ...ppcRecs].sort((a, b) => b.priorityScore - a.priorityScore);
+    // Manual recommendations take precedence (quote the user's own numbers) and
+    // are listed first so their de-duplication wins over generic equivalents.
+    const manualRecs =
+      manualMode && params.manualInput
+        ? generateManualRecommendations(params.manualInput, params.businessName)
+        : [];
+    const all = [...manualRecs, ...seoRecs, ...ppcRecs].sort((a, b) => b.priorityScore - a.priorityScore);
     // Dedupe by title.
     const seen = new Set<string>();
     report.recommendations = all.filter((r) => (seen.has(r.title) ? false : (seen.add(r.title), true)));
@@ -365,8 +404,9 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
     report.abTests = generateAbTests(scoringInput);
     setStep("recommendations", "done", `${report.recommendations.length} recommendations`);
 
-    // 5. Executive summary + report --------------------------------------
+    // 5. Executive summary + plain-English headline takeaways -------------
     setStep("report", "running");
+    report.summary = computeSummary(report);
     report.executiveSummary = await generateExecutiveSummary(report);
     setStep("report", "done");
 
@@ -379,4 +419,34 @@ export async function runAudit(params: RunAuditParams): Promise<AuditReport> {
     report.completedAt = new Date().toISOString();
     return report;
   }
+}
+
+/** Derive the plain-English headline takeaways shown atop the report. */
+function computeSummary(report: AuditReport): ReportSummary {
+  const recs = report.recommendations;
+  const byPriority = [...recs].sort((a, b) => b.priorityScore - a.priorityScore);
+  const critical = byPriority.find((r: Recommendation) => r.group === "critical") ?? null;
+  const easy = byPriority.find((r: Recommendation) => r.group === "easy") ?? null;
+  const mainLeak = byPriority[0] ?? null;
+  const s = report.scores;
+
+  const grade =
+    s.searchFunnel >= 75 ? "in good shape" : s.searchFunnel >= 55 ? "a solid foundation with clear gaps" : s.searchFunnel >= 40 ? "underperforming" : "leaking value in several places";
+
+  const criticalCount = recs.filter((r) => r.group === "critical").length;
+  let diagnosis: string;
+  if (criticalCount > 0) {
+    diagnosis = `Your search funnel is ${grade}. Fix the ${criticalCount} critical issue${criticalCount > 1 ? "s" : ""} blocking measurement and conversions before spending more on marketing.`;
+  } else if (s.searchFunnel >= 75) {
+    diagnosis = `Your search funnel is ${grade}. Focus on the quick wins and strategic improvements to compound your results.`;
+  } else {
+    diagnosis = `Your search funnel is ${grade}. There are no hard blockers, but several improvements will meaningfully lift results.`;
+  }
+
+  return {
+    diagnosis,
+    mainLeak: mainLeak ? mainLeak.title : null,
+    bestQuickWin: easy ? easy.title : null,
+    biggestRisk: critical ? critical.title : null,
+  };
 }

@@ -7,8 +7,21 @@
 
 export type Severity = "critical" | "high" | "medium" | "low";
 export type Difficulty = "easy" | "medium" | "hard";
-/** url_only = crawl + SEO; connected = + Google data; full = the complete SEO + PPC audit. */
-export type AuditMode = "url_only" | "connected" | "full";
+/**
+ * Audit input modes:
+ *  - url_only   = website-only crawl + SEO analysis
+ *  - manual     = crawl + user-entered analytics/PPC/SEO/tracking numbers
+ *  - connected  = crawl + live Google data (Ads/GA4/GSC/GTM)
+ *  - full       = the complete connected SEO + PPC audit (alias of connected+)
+ */
+export type AuditMode = "url_only" | "manual" | "connected" | "full";
+
+/**
+ * The three client-facing recommendation buckets. Critical = blocks ROI,
+ * tracking, visibility, or conversions. Easy = low effort, clear fix. Eventually
+ * = valuable but non-blocking strategic work.
+ */
+export type RecommendationGroup = "critical" | "eventually" | "easy";
 export type AuditStatus = "pending" | "running" | "completed" | "failed";
 export type Urgency = "now" | "soon" | "later";
 export type Confidence = "high" | "medium" | "low";
@@ -301,10 +314,111 @@ export interface Recommendation {
   difficulty: Difficulty;
   urgency: Urgency;
   confidence: Confidence;
+  /** Client-facing bucket: critical / eventually / easy. */
+  group: RecommendationGroup;
   /** Priority = Impact × Confidence × Urgency ÷ Difficulty, normalized 0–100. */
   priorityScore: number;
   relatedEntityType: "campaign" | "ad_group" | "keyword" | "page" | "tracking" | "query" | null;
   relatedEntityId: string | null;
+}
+
+// --- Manual analytics input ------------------------------------------------
+// Every field is optional. Blank fields simply lower the confidence of the
+// findings that would have used them — the audit always runs.
+
+export interface ManualBusinessContext {
+  runningGoogleAds?: "yes" | "no" | "paused" | "unsure";
+  doingSeo?: "yes" | "no" | "somewhat" | "unsure";
+  monthlyAdsBudget?: number;
+  monthlySeoBudget?: number;
+  averageCustomerValue?: number;
+  closeRate?: number; // 0–1
+  mostImportantConversion?: string;
+  targetLocations?: string;
+  competitors?: string;
+}
+
+export interface ManualWebsiteMetrics {
+  sessions?: number;
+  users?: number;
+  organicSessions?: number;
+  paidSessions?: number;
+  conversions?: number;
+  conversionRate?: number; // 0–1
+  topLandingPageUrl?: string;
+  topLandingPageSessions?: number;
+  topLandingPageConversions?: number;
+  bounceOrEngagementRate?: number; // 0–1
+  mostImportantEvent?: string;
+  formsTracked?: boolean;
+  phoneClicksTracked?: boolean;
+  bookingsOrPurchasesTracked?: boolean;
+  hasThankYouPages?: boolean;
+}
+
+export interface ManualPpcMetrics {
+  monthlySpend?: number;
+  impressions?: number;
+  clicks?: number;
+  ctr?: number; // 0–1
+  avgCpc?: number;
+  conversions?: number;
+  costPerConversion?: number;
+  conversionRate?: number; // 0–1
+  topCampaign?: string;
+  topAdGroup?: string;
+  topKeyword?: string;
+  worstKeyword?: string;
+  brandedSeparated?: boolean;
+  servicesSeparated?: boolean;
+  negativeKeywordsUsed?: boolean;
+  adExtensionsUsed?: boolean;
+  /** "homepage" | "dedicated" | "mixed" */
+  trafficDestination?: "homepage" | "dedicated" | "mixed";
+}
+
+export interface ManualSeoMetrics {
+  organicClicks?: number;
+  organicImpressions?: number;
+  organicCtr?: number; // 0–1
+  averagePosition?: number;
+  topQuery?: string;
+  topPage?: string;
+  highImpressionLowClickQuery?: string;
+  highImpressionLowCtrPage?: string;
+  hasServicePages?: boolean;
+  hasLocationPages?: boolean;
+  hasBlog?: boolean;
+  hasGoogleBusinessProfile?: boolean;
+}
+
+export interface ManualTrackingMetrics {
+  analyticsInstalled?: boolean;
+  gtmInstalled?: boolean;
+  adsConversionTracking?: boolean;
+  phoneCallTracking?: boolean;
+  formTracking?: boolean;
+  bookingPurchaseTracking?: boolean;
+  duplicateConversionsPossible?: boolean;
+  knowsQualifiedLeadSources?: boolean;
+}
+
+export interface ManualAnalyticsInput {
+  businessContext: ManualBusinessContext;
+  websiteMetrics: ManualWebsiteMetrics;
+  ppcMetrics: ManualPpcMetrics;
+  seoMetrics: ManualSeoMetrics;
+  trackingMetrics: ManualTrackingMetrics;
+  knownIssues?: string;
+  notes?: string;
+}
+
+/** Plain-English headline takeaways shown at the top of the report. */
+export interface ReportSummary {
+  diagnosis: string;
+  mainLeak: string | null;
+  bestQuickWin: string | null;
+  biggestRisk: string | null;
 }
 
 /** Content roadmap item produced by the content strategy engine. */
@@ -379,11 +493,13 @@ export interface AuditReport {
   scores: ScoreSet;
   breakdowns: Record<ScoreKey, ScoreBreakdown>;
   executiveSummary: string;
+  summary: ReportSummary;
   recommendations: Recommendation[];
   abTests: AbTest[];
   contentOpportunities: ContentOpportunity[];
   crawledPages: CrawledPage[];
   siteSignals: SiteSignals | null;
+  manualInput: ManualAnalyticsInput | null;
   adsRows: GoogleAdsRow[];
   ga4Rows: Ga4Row[];
   searchConsoleRows: SearchConsoleRow[];

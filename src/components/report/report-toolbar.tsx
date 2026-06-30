@@ -39,9 +39,20 @@ export function ReportToolbar({
     )
     .join("\n\n");
 
-  const taskList = recommendations
-    .map((r) => `- [ ] ${r.title} (${r.severity}, ${r.difficulty}, priority ${r.priorityScore})`)
-    .join("\n");
+  // Group the task list by the three client-facing buckets.
+  const groupTasks = (group: "critical" | "easy" | "eventually") =>
+    recommendations
+      .filter((r) => r.group === group)
+      .map((r) => `- [ ] ${r.title} (${r.difficulty})`)
+      .join("\n");
+  const taskList = [
+    "## Critical (do first)",
+    groupTasks("critical") || "- (none)",
+    "\n## Easy fixes",
+    groupTasks("easy") || "- (none)",
+    "\n## Later improvements",
+    groupTasks("eventually") || "- (none)",
+  ].join("\n");
 
   const clientSummary = `${businessName} — Search Funnel Audit Summary\n\n${executiveSummary}\n\nTop priorities:\n${recommendations
     .slice(0, 5)

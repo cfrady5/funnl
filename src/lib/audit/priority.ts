@@ -12,6 +12,7 @@ import type {
   Confidence,
   Difficulty,
   Recommendation,
+  RecommendationGroup,
   Severity,
   Urgency,
 } from "@/lib/types";
@@ -39,21 +40,49 @@ export function computePriority(
   return clamp(Math.round((raw / 1.43) * 100));
 }
 
-type RecInput = Omit<Recommendation, "id" | "priorityScore" | "urgency" | "confidence"> & {
+/**
+ * Map a recommendation into one of the three client-facing buckets.
+ *
+ * - critical  → blocks ROI / tracking / visibility / conversions. Driven by an
+ *   explicit `blocking` flag or critical severity, NOT merely high priority.
+ * - easy      → low-effort, clear fix (difficulty "easy"), when not blocking.
+ * - eventually → valuable but non-blocking strategic work.
+ */
+export function deriveGroup(
+  severity: Severity,
+  difficulty: Difficulty,
+  blocking: boolean,
+): RecommendationGroup {
+  if (blocking || severity === "critical") return "critical";
+  if (difficulty === "easy") return "easy";
+  return "eventually";
+}
+
+type RecInput = Omit<
+  Recommendation,
+  "id" | "priorityScore" | "urgency" | "confidence" | "group"
+> & {
   urgency?: Urgency;
   confidence?: Confidence;
+  group?: RecommendationGroup;
+  /** Marks an issue that blocks ROI/tracking/visibility/conversions → Critical. */
+  blocking?: boolean;
   priorityScore?: number;
 };
 
 export function makeRecommendation(input: RecInput): Recommendation {
   const urgency = input.urgency ?? DEFAULT_URGENCY[input.severity];
   const confidence = input.confidence ?? "high";
+  const group = input.group ?? deriveGroup(input.severity, input.difficulty, input.blocking ?? false);
   const priorityScore = input.priorityScore ?? computePriority(input.severity, input.difficulty, urgency, confidence);
+  // `blocking` is a construction-time hint, not part of the stored shape.
+  const { blocking: _blocking, ...rest } = input;
   return {
-    ...input,
+    ...rest,
     id: generateId("rec"),
     urgency,
     confidence,
+    group,
     priorityScore,
   };
 }
