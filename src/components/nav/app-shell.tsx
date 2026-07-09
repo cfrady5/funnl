@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   PlugZap,
   Settings,
   PlusCircle,
+  LogOut,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -28,6 +30,17 @@ export function AppShell({
   userEmail?: string;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  // Sign-out is only meaningful when a real auth provider is configured.
+  const hasAuth = !demoMode && Boolean(userEmail);
+
+  async function signOut() {
+    const supabase = createClient();
+    if (supabase) await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
   return (
     <div className="flex min-h-screen bg-muted/30">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-card md:flex">
@@ -57,8 +70,20 @@ export function AppShell({
             );
           })}
         </nav>
-        <div className="border-t p-4">
-          <div className="truncate text-xs text-muted-foreground">{userEmail || "Signed in"}</div>
+        <div className="flex items-center justify-between gap-2 border-t p-4">
+          <div className="min-w-0 truncate text-xs text-muted-foreground">
+            {userEmail || "Signed in"}
+          </div>
+          {hasAuth && (
+            <button
+              type="button"
+              onClick={signOut}
+              title="Sign out"
+              className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </aside>
 
@@ -68,6 +93,16 @@ export function AppShell({
           <Link href="/" aria-label="srchr home">
             <Logo />
           </Link>
+          {hasAuth && (
+            <button
+              type="button"
+              onClick={signOut}
+              title="Sign out"
+              className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          )}
         </header>
         <main className="flex-1 p-4 md:p-8">{children}</main>
       </div>

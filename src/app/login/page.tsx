@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { ArrowLeft, Info, Lock } from "lucide-react";
+import { ArrowLeft, Info } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { LoginForm } from "@/components/auth/login-form";
 import {
   Card,
   CardContent,
@@ -64,52 +62,7 @@ export default function LoginPage() {
                 </p>
               </>
             ) : (
-              <>
-                {/* Styled placeholder form. Real Supabase auth requires a
-                    browser client + client component; this server page only
-                    renders the markup and points to the README to wire it up. */}
-                <form className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      placeholder="you@company.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      autoComplete="current-password"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  <Button type="submit" size="lg" className="w-full" disabled>
-                    <Lock className="size-4" />
-                    Sign in
-                  </Button>
-                  <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-                    <Info className="size-3.5" />
-                    Configure Supabase Auth — see the README to enable this form.
-                  </p>
-                </form>
-
-                <div className="relative">
-                  <Separator />
-                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs uppercase tracking-wide text-muted-foreground">
-                    or
-                  </span>
-                </div>
-
-                <Button asChild size="lg" variant="outline" className="w-full">
-                  <Link href="/dashboard">Continue to dashboard</Link>
-                </Button>
-              </>
+              <LoginForm />
             )}
           </CardContent>
 

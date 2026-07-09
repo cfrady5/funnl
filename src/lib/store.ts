@@ -122,7 +122,9 @@ function toCard(a: AuditReport): AuditSummaryCard {
     auditMode: a.auditMode,
     status: a.status,
     overallScore: a.scores.searchFunnel,
-    criticalCount: a.recommendations.filter((r) => r.severity === "critical").length,
+    // Fall back to severity/difficulty for reports stored before `group` existed.
+    criticalCount: a.recommendations.filter((r) => (r.group ?? (r.severity === "critical" ? "critical" : "")) === "critical").length,
+    easyCount: a.recommendations.filter((r) => (r.group ?? (r.difficulty === "easy" ? "easy" : "")) === "easy").length,
     createdAt: a.createdAt,
   };
 }

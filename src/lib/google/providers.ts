@@ -19,7 +19,7 @@ import { createGtmService } from "./gtm";
 import type { Ga4Row, GoogleAdsRow, GtmSnapshot, IntegrationProvider, SearchConsoleRow } from "@/lib/types";
 
 async function accessTokenFor(userId: string, provider: IntegrationProvider): Promise<string> {
-  const tokens = getTokens(userId, provider);
+  const tokens = await getTokens(userId, provider);
   if (!tokens?.refreshTokenEncrypted || tokens.refreshTokenEncrypted.startsWith("ENC_KEY_MISSING")) {
     throw new Error("NOT_CONNECTED");
   }
@@ -29,9 +29,12 @@ async function accessTokenFor(userId: string, provider: IntegrationProvider): Pr
 }
 
 export function buildLiveProviders(userId: string, dateStart: string, dateEnd: string) {
-  const sel = getSelections(userId);
+  // Selections are resolved lazily inside each provider so they're fetched from
+  // durable storage on whichever serverless instance runs the audit.
+  const selections = () => getSelections(userId);
   return {
     async ads(): Promise<{ rows: GoogleAdsRow[]; searchTerms: GoogleAdsRow[] }> {
+      const sel = await selections();
       if (!sel?.googleAdsCustomerId) throw new Error("NO_ADS_ACCOUNT");
       const token = await accessTokenFor(userId, "google_ads");
       const svc = createAdsService(token);
@@ -42,16 +45,19 @@ export function buildLiveProviders(userId: string, dateStart: string, dateEnd: s
       return { rows, searchTerms };
     },
     async ga4(): Promise<Ga4Row[]> {
+      const sel = await selections();
       if (!sel?.ga4PropertyId) throw new Error("NO_GA4_PROPERTY");
       const token = await accessTokenFor(userId, "ga4");
       return createGa4Service(token).fetchLandingPagePerformance(sel.ga4PropertyId, dateStart, dateEnd);
     },
     async searchConsole(): Promise<SearchConsoleRow[]> {
+      const sel = await selections();
       if (!sel?.searchConsoleSiteUrl) throw new Error("NO_GSC_SITE");
       const token = await accessTokenFor(userId, "search_console");
       return createSearchConsoleService(token).query(sel.searchConsoleSiteUrl, dateStart, dateEnd);
     },
     async gtm(): Promise<GtmSnapshot | null> {
+      const sel = await selections();
       if (!sel?.gtmAccountId || !sel.gtmContainerId || !sel.gtmWorkspaceId) return null;
       const token = await accessTokenFor(userId, "gtm");
       return createGtmService(token).inspect(sel.gtmAccountId, sel.gtmContainerId, sel.gtmWorkspaceId);

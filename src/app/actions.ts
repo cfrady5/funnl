@@ -96,26 +96,29 @@ export async function connectIntegrationAction(provider: IntegrationProvider) {
 export async function disconnectIntegrationAction(provider: IntegrationProvider) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  disconnectProvider(user.id, provider);
+  await disconnectProvider(user.id, provider);
   revalidatePath("/integrations");
 }
 
 export async function syncIntegrationAction(provider: IntegrationProvider) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  syncProvider(user.id, provider);
+  await syncProvider(user.id, provider);
   revalidatePath("/integrations");
 }
 
 export async function saveSelectionsAction(formData: FormData) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  saveSelections(user.id, String(formData.get("businessId") ?? "default"), {
+  // A GTM selection arrives as "accountId:containerId" from the dropdown.
+  const gtmCombo = String(formData.get("gtmSelection") ?? "");
+  const [gtmAcct, gtmContainer] = gtmCombo.includes(":") ? gtmCombo.split(":") : [null, null];
+  await saveSelections(user.id, String(formData.get("businessId") ?? "default"), {
     googleAdsCustomerId: (formData.get("googleAdsCustomerId") as string) || null,
     ga4PropertyId: (formData.get("ga4PropertyId") as string) || null,
     searchConsoleSiteUrl: (formData.get("searchConsoleSiteUrl") as string) || null,
-    gtmAccountId: (formData.get("gtmAccountId") as string) || null,
-    gtmContainerId: (formData.get("gtmContainerId") as string) || null,
+    gtmAccountId: gtmAcct || (formData.get("gtmAccountId") as string) || null,
+    gtmContainerId: gtmContainer || (formData.get("gtmContainerId") as string) || null,
     gtmWorkspaceId: (formData.get("gtmWorkspaceId") as string) || null,
   });
   revalidatePath("/integrations");

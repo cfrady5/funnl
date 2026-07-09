@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     const refreshTokenEncrypted = maybeEncrypt(tokens.refreshToken);
 
     for (const provider of providers) {
-      connectProvider(user.id, provider, tokens.scope.split(" "), {
+      await connectProvider(user.id, provider, tokens.scope.split(" "), {
         accessToken: tokens.accessToken,
         refreshTokenEncrypted,
         expiresAt: tokens.expiresAt,

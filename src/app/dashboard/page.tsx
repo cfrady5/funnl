@@ -64,7 +64,7 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   const audits = await listAudits(user?.id ?? null);
   const businesses = await listBusinesses(user?.id ?? null);
-  const integrations = listIntegrations(user?.id ?? "anonymous");
+  const integrations = await listIntegrations(user?.id ?? "anonymous");
 
   const averageScore =
     audits.length > 0
@@ -73,6 +73,7 @@ export default async function DashboardPage() {
         )
       : 0;
   const criticalIssues = audits.reduce((sum, a) => sum + a.criticalCount, 0);
+  const easyFixes = audits.reduce((sum, a) => sum + a.easyCount, 0);
   const connectedIntegrations = integrations.filter(
     (i) => i.status === "connected",
   ).length;
@@ -158,13 +159,13 @@ export default async function DashboardPage() {
             <CardContent className="flex items-center justify-between gap-3 p-5">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Audits run
+                  Easy fixes found
                 </p>
-                <p className="mt-1 text-3xl font-bold tabular-nums">
-                  {audits.length}
+                <p className="mt-1 text-3xl font-bold tabular-nums text-emerald-600">
+                  {easyFixes}
                 </p>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                 <FileSearch className="h-6 w-6" />
               </div>
             </CardContent>

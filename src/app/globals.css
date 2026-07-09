@@ -75,3 +75,19 @@
     transform: translateX(-100%);
   }
 }
+
+/* Print-friendly report: white background, expanded recommendation details
+   (supported browsers), and no mid-card page breaks. */
+@media print {
+  body {
+    background: #fff !important;
+  }
+  details::details-content {
+    display: block !important;
+    content-visibility: visible !important;
+  }
+  .rounded-xl,
+  .rounded-lg {
+    break-inside: avoid;
+  }
+}

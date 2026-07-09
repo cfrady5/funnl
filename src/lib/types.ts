@@ -537,5 +537,6 @@ export interface AuditSummaryCard {
   status: AuditStatus;
   overallScore: number;
   criticalCount: number;
+  easyCount: number;
   createdAt: string;
 }

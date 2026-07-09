@@ -25,9 +25,11 @@ import { Separator } from "@/components/ui/separator";
 import { getCurrentUser } from "@/lib/auth";
 import { DEMO_MODE, capabilities } from "@/lib/config";
 import { getSelections, listIntegrations, providerLabel } from "@/lib/integrations";
+import { listGoogleAccountOptions } from "@/lib/google/accounts";
+import { Select } from "@/components/ui/select";
 import { saveSelectionsAction } from "@/app/actions";
 import { relativeTime } from "@/lib/utils";
-import type { GoogleIntegration, IntegrationProvider } from "@/lib/types";
+import type { GoogleIntegration, IntegrationProvider, SelectedGoogleAccounts } from "@/lib/types";
 
 const PROVIDER_ICON: Record<IntegrationProvider, React.ComponentType<{ className?: string }>> = {
   google_ads: Gauge,
@@ -45,7 +47,7 @@ const PROVIDER_BLURB: Record<IntegrationProvider, string> = {
 
 function selectedDetail(
   provider: IntegrationProvider,
-  selections: ReturnType<typeof getSelections>,
+  selections: SelectedGoogleAccounts | null,
 ): { label: string; value: string } | null {
   if (!selections) return null;
   switch (provider) {
@@ -78,6 +80,16 @@ export default async function IntegrationsPage({
   const params = await searchParams;
   const user = await getCurrentUser();
   const userId = user?.id ?? "anonymous";
+  const integrationsList = await listIntegrations(userId);
+  const selections = await getSelections(userId);
+  const connectedMap = {
+    google_ads: integrationsList.some((i) => i.provider === "google_ads" && i.status === "connected"),
+    ga4: integrationsList.some((i) => i.provider === "ga4" && i.status === "connected"),
+    search_console: integrationsList.some((i) => i.provider === "search_console" && i.status === "connected"),
+    gtm: integrationsList.some((i) => i.provider === "gtm" && i.status === "connected"),
+  };
+  // Live account/property/site/container options for the dropdowns (null → manual input).
+  const options = await listGoogleAccountOptions(userId, connectedMap);
   const errorMessage =
     params.error === "google_not_configured"
       ? "Google sign-in isn't configured on this server yet. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable connecting your Google accounts."
@@ -88,11 +100,8 @@ export default async function IntegrationsPage({
           : params.error
             ? decodeURIComponent(params.error)
             : null;
-  const integrations = listIntegrations(userId);
-  const selections = getSelections(userId);
-
   const byProvider = new Map<IntegrationProvider, GoogleIntegration>(
-    integrations.map((i) => [i.provider, i]),
+    integrationsList.map((i) => [i.provider, i]),
   );
   const providers: IntegrationProvider[] = ["google_ads", "ga4", "search_console", "gtm"];
 
@@ -214,47 +223,74 @@ export default async function IntegrationsPage({
             <form action={saveSelectionsAction} className="space-y-6">
               <input type="hidden" name="businessId" value="default" />
               <div className="grid gap-5 sm:grid-cols-2">
-                <Field
+                <PickField
                   id="googleAdsCustomerId"
-                  label="Google Ads customer ID"
+                  label="Google Ads account"
                   placeholder="123-456-7890"
                   defaultValue={selections?.googleAdsCustomerId ?? ""}
+                  options={options.adsCustomers}
                 />
-                <Field
+                <PickField
                   id="ga4PropertyId"
-                  label="GA4 property ID"
+                  label="GA4 property"
                   placeholder="987654321"
                   defaultValue={selections?.ga4PropertyId ?? ""}
+                  options={options.ga4Properties}
                 />
-                <Field
+                <PickField
                   id="searchConsoleSiteUrl"
-                  label="Search Console site URL"
+                  label="Search Console site"
                   placeholder="https://example.com/"
                   defaultValue={selections?.searchConsoleSiteUrl ?? ""}
+                  options={options.gscSites}
                 />
-                <Field
-                  id="gtmAccountId"
-                  label="GTM account ID"
-                  placeholder="6001234567"
-                  defaultValue={selections?.gtmAccountId ?? ""}
-                />
-                <Field
-                  id="gtmContainerId"
-                  label="GTM container ID"
-                  placeholder="GTM-XXXXXXX"
-                  defaultValue={selections?.gtmContainerId ?? ""}
-                />
+                {options.gtmContainers ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="gtmSelection">GTM container</Label>
+                    <Select
+                      id="gtmSelection"
+                      name="gtmSelection"
+                      defaultValue={
+                        selections?.gtmAccountId && selections?.gtmContainerId
+                          ? `${selections.gtmAccountId}:${selections.gtmContainerId}`
+                          : ""
+                      }
+                    >
+                      <option value="">Choose a container…</option>
+                      {options.gtmContainers.map((c) => (
+                        <option key={`${c.accountId}:${c.containerId}`} value={`${c.accountId}:${c.containerId}`}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                ) : (
+                  <>
+                    <Field
+                      id="gtmAccountId"
+                      label="GTM account ID"
+                      placeholder="6001234567"
+                      defaultValue={selections?.gtmAccountId ?? ""}
+                    />
+                    <Field
+                      id="gtmContainerId"
+                      label="GTM container ID"
+                      placeholder="GTM-XXXXXXX"
+                      defaultValue={selections?.gtmContainerId ?? ""}
+                    />
+                  </>
+                )}
                 <Field
                   id="gtmWorkspaceId"
                   label="GTM workspace ID"
                   placeholder="1"
-                  defaultValue={selections?.gtmWorkspaceId ?? ""}
+                  defaultValue={selections?.gtmWorkspaceId ?? "1"}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Once you connect each provider above, these become dropdowns
-                populated from the Google APIs. You can also enter the IDs
-                manually if you already know them.
+                Connected providers show live dropdowns from the Google APIs.
+                Anything not connected yet can be entered manually if you already
+                know the ID.
               </p>
               <div className="flex justify-end">
                 <Button type="submit">Save selections</Button>
@@ -314,6 +350,38 @@ function Field({
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
       <Input id={id} name={id} placeholder={placeholder} defaultValue={defaultValue} />
+    </div>
+  );
+}
+
+/** Dropdown when live options exist for the connected provider; input otherwise. */
+function PickField({
+  id,
+  label,
+  placeholder,
+  defaultValue,
+  options,
+}: {
+  id: string;
+  label: string;
+  placeholder: string;
+  defaultValue: string;
+  options: { value: string; label: string }[] | null;
+}) {
+  if (!options || options.length === 0) {
+    return <Field id={id} label={label} placeholder={placeholder} defaultValue={defaultValue} />;
+  }
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Select id={id} name={id} defaultValue={defaultValue}>
+        <option value="">Choose…</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </Select>
     </div>
   );
 }
