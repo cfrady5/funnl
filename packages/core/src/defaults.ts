@@ -1,5 +1,6 @@
 import { getTheme, OPTION_LABELS, type BrandId } from './brand';
 import { autoFraming } from './layout';
+import { teamBlockColor } from './teams';
 import { CoverSpecSchema, VideoSpecSchema, type CoverSpec, type PassingOption, type VideoSpec } from './spec';
 
 export interface SourceMeta {
@@ -75,6 +76,19 @@ export function coverFromVideoSpec(spec: VideoSpec, statValue: number | null): C
     headline: spec.brand === 'tiresias' ? 'CAN YOU SEE THE PASS?' : 'SEE ABSOLUTELY NOTHING',
     gameLabel: spec.player.gameLabel,
     headshot: null,
-    backdrop: { src: spec.source.src, timeSec: spec.freezeSec },
+    // Featured player = the ball handler at the decision frame (feet point → frame the body above it).
+    backdrop: {
+      src: spec.source.src,
+      timeSec: spec.freezeSec,
+      sourceWidth: spec.source.width,
+      sourceHeight: spec.source.height,
+      focusX: spec.handler?.x ?? 0.5,
+      focusY: Math.max(0, (spec.handler?.y ?? 0.55) - 0.09),
+      zoom: 3,
+    },
+    kicker: spec.brand === 'tiresias' ? 'assists:' : 'turnovers:',
+    statLine: null,
+    statSub: null,
+    blockColor: teamBlockColor(spec.player.teamAbbr),
   });
 }

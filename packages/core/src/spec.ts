@@ -159,8 +159,30 @@ export const CoverSpecSchema = z.object({
     })
     .nullable()
     .default(null),
-  /** Optional still from the (rights-cleared) source clip used as a duotone backdrop. */
-  backdrop: z.object({ src: z.string(), timeSec: z.number().min(0) }).nullable().default(null),
+  /**
+   * Fallback image when no authorised headshot exists: a still from the
+   * rights-cleared source clip, cropped around the featured player.
+   */
+  backdrop: z
+    .object({
+      src: z.string(),
+      timeSec: z.number().min(0),
+      sourceWidth: z.number().int().positive().default(1920),
+      sourceHeight: z.number().int().positive().default(1080),
+      focusX: z.number().min(0).max(1).default(0.5),
+      focusY: z.number().min(0).max(1).default(0.5),
+      zoom: z.number().min(1).max(6).default(2.2),
+    })
+    .nullable()
+    .default(null),
+  /** Top-left kicker above the stat value, e.g. "assists:". */
+  kicker: z.string().max(24).nullable().default(null),
+  /** Bottom-right verified stat line, e.g. "24p/6r/13a". */
+  statLine: z.string().max(20).nullable().default(null),
+  /** Second bottom-right line, e.g. "+21" (plus/minus) — verified data only. */
+  statSub: z.string().max(12).nullable().default(null),
+  /** Colour block behind the player (team primary). Null → brand default. */
+  blockColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().default(null),
 });
 export type CoverSpec = z.infer<typeof CoverSpecSchema>;
 export type CoverSpecInput = z.input<typeof CoverSpecSchema>;

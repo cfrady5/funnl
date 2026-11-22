@@ -18,3 +18,4 @@ __pycache__/
 /fixtures/frames/
 .DS_Store
 /fixtures/*.json
+/fixtures/*.png

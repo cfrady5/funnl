@@ -2,6 +2,7 @@
 
 import {
   autoFraming,
+  teamBlockColor,
   getTheme,
   OPTION_LABELS,
   TEXT_BUDGETS,
@@ -464,9 +465,17 @@ function PlayerTab({ spec, update, cover, setCover }: TabProps & { cover: Projec
         <Field label="Cover headline"><Input value={cover.headline ?? ''} maxLength={40} placeholder={spec.brand === 'tiresias' ? 'CAN YOU SEE THE PASS?' : 'SEE ABSOLUTELY NOTHING'} onChange={(e) => setCover({ ...cover, headline: e.target.value || undefined })} /></Field>
         <Field label="Series title"><Input value={cover.seriesTitle ?? ''} maxLength={32} placeholder={getTheme(spec.brand).seriesTitle} onChange={(e) => setCover({ ...cover, seriesTitle: e.target.value || undefined })} /></Field>
         <Field label="Verified stat value"><Input type="number" min={0} max={99} value={cover.statValue ?? ''} onChange={(e) => setCover({ ...cover, statValue: e.target.value === '' ? null : Number(e.target.value) })} /></Field>
-        <Field label="Stat label"><Input value={cover.statLabel ?? ''} maxLength={32} placeholder="ASSISTS LAST NIGHT" onChange={(e) => setCover({ ...cover, statLabel: e.target.value || undefined })} /></Field>
+        <Field label="Kicker (top-left)"><Input value={cover.kicker ?? ''} maxLength={24} placeholder={spec.brand === 'tiresias' ? 'assists:' : 'turnovers:'} onChange={(e) => setCover({ ...cover, kicker: e.target.value || undefined })} /></Field>
+        <Field label="Verified stat line (bottom-right)"><Input value={cover.statLine ?? ''} maxLength={20} placeholder="24p/6r/13a" onChange={(e) => setCover({ ...cover, statLine: e.target.value || null })} /></Field>
+        <Field label="Second line (e.g. plus/minus)"><Input value={cover.statSub ?? ''} maxLength={12} placeholder="+21" onChange={(e) => setCover({ ...cover, statSub: e.target.value || null })} /></Field>
+        <Field label="Colour block" hint="Defaults to the team's primary colour when the team is known.">
+          <div className="flex items-center gap-2">
+            <input type="color" value={cover.blockColor ?? (teamBlockColor(spec.player.teamAbbr) ?? (spec.brand === 'tiresias' ? '#C8323C' : '#FF3B1F'))} onChange={(e) => setCover({ ...cover, blockColor: e.target.value.toUpperCase() })} className="h-9 w-12 rounded border border-line-2 bg-bg" />
+            {cover.blockColor ? <Button size="sm" variant="ghost" onClick={() => setCover({ ...cover, blockColor: null })}>Use team colour</Button> : null}
+          </div>
+        </Field>
       </div>
-      <div className="text-xs text-faint">No headshot is attached: covers use the typography-only layout. Headshots need an authorised image with rights recorded (see Integrations).</div>
+      <div className="text-xs text-faint">No authorised cutout is attached, so the cover uses a still from this clip cropped on the ball handler. With no usable still it falls back to typography only. Player cutouts need an authorised image with its rights recorded.</div>
     </>
   );
 }

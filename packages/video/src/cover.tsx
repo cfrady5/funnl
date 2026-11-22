@@ -1,169 +1,157 @@
-import { getTheme, SAFE, type CoverSpec } from '@tiresias/core';
+import { getTheme, type CoverSpec } from '@tiresias/core';
 import React from 'react';
 import { AbsoluteFill, Freeze, Img, OffthreadVideo } from 'remotion';
-import { EyeGlyph, HazardStripes, Wordmark } from './brand-mark';
+import { EyeGlyph, HazardStripes } from './brand-mark';
 import { FitText, useFontsReady } from './text';
 
 export type CoverProps = { cover: CoverSpec };
 
 /**
- * Reusable cover template. Profile grids crop covers to roughly the central
- * 3:4 area (y ≈ 240–1680), so all key information stays inside it.
+ * Editorial cover template (cream page, solid team-colour block, player
+ * breaking out of the block, heavy lowercase type):
+ *
+ *   kicker:                        ◉ tiresias
+ *   13                             can you see the pass?
+ *   ┌──────── colour block ────────┐   ← cutout head breaks the top edge
+ *   │          player              │
+ *   └──────────────────────────────┘
+ *   player name                       24p/6r/13a
+ *   team                                     +21
+ *
+ * Image priority: authorised cutout headshot → still from the rights-cleared
+ * clip cropped on the featured player → typography only (giant stat in block).
+ * Key content stays inside the central 3:4 area (y ≈ 240–1680) that profile grids show.
  */
+export const COVER_LAYOUT = {
+  page: { width: 1080, height: 1920 },
+  block: { x: 108, y: 640, width: 864, height: 700 },
+} as const;
+
+const INK = '#0B0B0C';
+const PAPER = '#FBF8EF';
+
 export const Cover: React.FC<CoverProps> = ({ cover }) => {
   const ready = useFontsReady();
   const theme = getTheme(cover.brand);
   const anti = cover.brand === 'antitiresias';
-  if (!ready) return <AbsoluteFill style={{ backgroundColor: theme.colors.bg }} />;
-  const W = SAFE.right - SAFE.left;
-  const hasHeadshot = Boolean(cover.headshot);
+  if (!ready) return <AbsoluteFill style={{ backgroundColor: PAPER }} />;
+
+  const { block } = COVER_LAYOUT;
+  const blockColor = cover.blockColor ?? (anti ? '#FF3B1F' : '#C8323C');
+  const cutout = cover.headshot?.cutout ? cover.headshot : null;
+  const framedPhoto = cover.headshot && !cover.headshot.cutout ? cover.headshot : null;
+  const typeOnly = !cover.headshot && !cover.backdrop;
+  const heavy = { fontFamily: 'Inter Tight', fontWeight: 900, color: INK, letterSpacing: '-0.045em', lineHeight: 0.96 } as const;
+  const rotate = anti ? -2.5 : 0;
 
   return (
-    <AbsoluteFill style={{ backgroundColor: theme.colors.bg, overflow: 'hidden' }}>
-      {/* Backdrop: a still from the rights-cleared clip, duotoned so type stays dominant. */}
-      {cover.backdrop ? (
-        <AbsoluteFill style={{ height: 1180 }}>
-          <div style={{ position: 'absolute', left: -420, top: 0, width: 1920 * 1.1, height: 1080 * 1.1, filter: 'grayscale(1) contrast(1.15) brightness(0.55)' }}>
-            <Freeze frame={Math.round(cover.backdrop.timeSec * 30)}>
-              <OffthreadVideo src={cover.backdrop.src} muted style={{ width: '100%', height: '100%' }} />
-            </Freeze>
-          </div>
-          <AbsoluteFill style={{ backgroundColor: anti ? '#FF3B1F' : theme.colors.accent, mixBlendMode: 'color', opacity: anti ? 0.55 : 0.35 }} />
-          <AbsoluteFill style={{ background: `linear-gradient(180deg, ${theme.colors.bg}E6 0%, ${theme.colors.bg}55 22%, ${theme.colors.bg}66 55%, ${theme.colors.bg} 96%)` }} />
-        </AbsoluteFill>
-      ) : (
-        <AbsoluteFill style={{ background: `radial-gradient(90% 50% at 70% 30%, ${anti ? '#3A1A06' : '#0F2A2A'} 0%, ${theme.colors.bg} 70%)` }} />
-      )}
-
-      {hasHeadshot ? <Headshot cover={cover} /> : <GiantGlyph brand={cover.brand} />}
-
-      {anti ? (
-        <>
-          <div style={{ position: 'absolute', top: 0, left: 0 }}>
-            <HazardStripes width={1080} height={26} />
-          </div>
-          <div style={{ position: 'absolute', bottom: 0, left: 0 }}>
-            <HazardStripes width={1080} height={26} />
-          </div>
-        </>
-      ) : null}
-
-      {/* Header */}
-      <div style={{ position: 'absolute', left: SAFE.left, top: 270, display: 'flex', alignItems: 'center', gap: 18 }}>
-        <EyeGlyph brand={cover.brand} size={64} strokeWidth={9} />
-        <Wordmark brand={cover.brand} size={anti ? 46 : 34} />
+    <AbsoluteFill style={{ backgroundColor: PAPER, overflow: 'hidden' }}>
+      {/* Top-left: kicker + stat value */}
+      <div style={{ position: 'absolute', left: block.x, top: block.y - 178, ...heavy, fontSize: 64 }}>
+        <div>{(cover.kicker ?? cover.statLabel).toLowerCase()}</div>
+        <div style={{ fontSize: 76 }}>{cover.statValue ?? '—'}</div>
       </div>
+
+      {/* Top-right: brand mark + headline */}
+      <div style={{ position: 'absolute', right: 1080 - block.x - block.width, top: block.y - 172, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <EyeGlyph brand={cover.brand} size={52} strokeWidth={9} color={anti ? INK : INK} />
+          <span style={{ ...heavy, fontSize: 40, letterSpacing: '-0.02em' }}>{anti ? 'anti tiresias' : 'tiresias'}</span>
+        </div>
+        <div style={{ ...heavy, fontWeight: 800, fontSize: 30, letterSpacing: '-0.02em', color: '#55565A', textAlign: 'right', maxWidth: 380, lineHeight: 1.05 }}>
+          {cover.headline.toLowerCase()}
+        </div>
+      </div>
+
+      {/* Colour block (+ framed image inside it) */}
       <div
         style={{
           position: 'absolute',
-          left: SAFE.left,
-          top: 350,
-          fontFamily: theme.fonts.mono,
-          fontWeight: 800,
-          fontSize: 26,
-          letterSpacing: '0.18em',
-          color: anti ? theme.colors.accent : theme.colors.accent,
+          left: block.x,
+          top: block.y,
+          width: block.width,
+          height: block.height,
+          backgroundColor: blockColor,
+          overflow: 'hidden',
+          transform: `rotate(${rotate}deg)`,
         }}
       >
-        {cover.seriesTitle}
+        {!cutout && !framedPhoto && cover.backdrop ? <ClipStill cover={cover} blockColor={blockColor} /> : null}
+        {framedPhoto ? (
+          <Img src={framedPhoto.src} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${framedPhoto.focusX * 100}% ${framedPhoto.focusY * 100}%` }} />
+        ) : null}
+        {typeOnly ? (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', ...heavy, color: PAPER, fontSize: 520, letterSpacing: '-0.07em', lineHeight: 1 }}>
+            {cover.statValue ?? ''}
+          </div>
+        ) : null}
+        {anti ? (
+          <div style={{ position: 'absolute', left: 0, top: 0 }}>
+            <HazardStripes width={block.width} height={22} colorB={INK} />
+          </div>
+        ) : null}
       </div>
 
-      {/* Stat block */}
-      {cover.statValue !== null ? (
-        <div style={{ position: 'absolute', left: SAFE.left - 8, top: 780, display: 'flex', alignItems: 'flex-end', gap: 20 }}>
-          <div
-            style={{
-              fontFamily: theme.fonts.display,
-              fontWeight: anti ? 400 : 900,
-              fontSize: anti ? 300 : 280,
-              lineHeight: 0.8,
-              letterSpacing: '-0.04em',
-              color: anti ? theme.colors.danger : theme.colors.accent,
-              textShadow: anti ? '8px 8px 0 #000' : undefined,
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
-            {cover.statValue}
-          </div>
-          <div style={{ fontFamily: theme.fonts.mono, fontWeight: 800, fontSize: 30, lineHeight: 1.2, letterSpacing: '0.08em', color: theme.colors.ink, paddingBottom: 12, maxWidth: 300 }}>
-            {cover.statLabel}
-          </div>
-        </div>
-      ) : null}
-
-      {/* Player */}
-      <div style={{ position: 'absolute', left: SAFE.left, top: 1060, width: W }}>
-        <div style={{ fontFamily: theme.fonts.mono, fontWeight: 700, fontSize: 26, letterSpacing: '0.14em', color: theme.colors.inkMuted, marginBottom: 14 }}>
-          {[cover.teamName ?? cover.teamAbbr, cover.gameLabel].filter(Boolean).join(' · ').toUpperCase()}
-        </div>
-        <FitText
-          text={cover.playerName}
-          width={hasHeadshot ? W : W}
-          maxLines={2}
-          maxFontSize={anti ? 150 : 132}
-          fontFamily={theme.fonts.display}
-          fontWeight={anti ? 400 : 900}
-          letterSpacingEm={anti ? 0.0 : -0.04}
-          lineHeight={0.92}
-          color={theme.colors.ink}
+      {/* Authorised cutout breaks out of the top of the block */}
+      {cutout ? (
+        <Img
+          src={cutout.src}
+          style={{
+            position: 'absolute',
+            left: block.x + block.width / 2 - (block.width * 1.05 * cutout.scale) / 2,
+            bottom: 1920 - (block.y + block.height),
+            width: block.width * 1.05 * cutout.scale,
+            height: (block.height + 260) * cutout.scale,
+            objectFit: 'contain',
+            objectPosition: 'bottom center',
+            filter: 'drop-shadow(0 18px 28px rgba(0,0,0,0.25))',
+          }}
         />
+      ) : null}
+
+      {/* Bottom-left: name + team */}
+      <div style={{ position: 'absolute', left: block.x, top: block.y + block.height + 28 }}>
+        <FitText text={cover.playerName.toLowerCase()} width={cover.statLine ? 560 : block.width} maxLines={1} maxFontSize={68} minFontSize={40} fontFamily="Inter Tight" fontWeight={900} letterSpacingEm={-0.045} lineHeight={1} color={INK} uppercase={false} />
+        <div style={{ ...heavy, fontSize: 60, marginTop: 4 }}>{(cover.teamName ?? cover.teamAbbr).toLowerCase()}</div>
       </div>
 
-      {/* Headline band */}
-      <div
-        style={{
-          position: 'absolute',
-          left: SAFE.left,
-          top: 1450,
-          transform: anti ? 'rotate(-3deg)' : undefined,
-          transformOrigin: 'left center',
-          backgroundColor: theme.colors.accent,
-          padding: anti ? '14px 22px' : '16px 24px',
-          borderRadius: anti ? 0 : 14,
-          border: anti ? '6px solid #000' : 'none',
-        }}
-      >
-        <FitText text={cover.headline} width={W - 48} maxLines={1} maxFontSize={anti ? 72 : 60} fontFamily={theme.fonts.display} fontWeight={anti ? 400 : 900} letterSpacingEm={anti ? 0.01 : -0.02} color={theme.colors.accentInk} />
-      </div>
+      {/* Bottom-right: verified stat line */}
+      {cover.statLine || cover.statSub ? (
+        <div style={{ position: 'absolute', right: 1080 - block.x - block.width, top: block.y + block.height + 28, textAlign: 'right', ...heavy, fontSize: 64 }}>
+          {cover.statLine ? <div>{cover.statLine.toLowerCase()}</div> : null}
+          {cover.statSub ? <div style={{ marginTop: 4 }}>{cover.statSub}</div> : null}
+        </div>
+      ) : null}
 
-      <div style={{ position: 'absolute', left: SAFE.left, top: 1740, fontFamily: theme.fonts.mono, fontWeight: 700, fontSize: 22, letterSpacing: '0.14em', color: theme.colors.inkMuted }}>
-        {cover.contentId} · {theme.tagline}
+      {/* Footer: series + id (outside the grid crop, still legible full-screen) */}
+      <div style={{ position: 'absolute', left: block.x, right: block.x, top: 1620, display: 'flex', justifyContent: 'space-between', fontFamily: 'JetBrains Mono', fontWeight: 700, fontSize: 22, letterSpacing: '0.08em', color: '#8A8B8F' }}>
+        <span>{cover.seriesTitle.toLowerCase()}</span>
+        <span>{cover.contentId.toLowerCase()}</span>
       </div>
+      {/* theme reference keeps brand tokens tree-shaken consistently */}
+      <span style={{ display: 'none' }}>{theme.id}</span>
     </AbsoluteFill>
   );
 };
 
-const Headshot: React.FC<{ cover: CoverSpec }> = ({ cover }) => {
-  const theme = getTheme(cover.brand);
-  const h = cover.headshot!;
-  const size = 720 * h.scale;
+/** Still from the rights-cleared clip, cropped on the featured player, toned toward the block colour. */
+const ClipStill: React.FC<{ cover: CoverSpec; blockColor: string }> = ({ cover, blockColor }) => {
+  const b = cover.backdrop!;
+  const { block } = COVER_LAYOUT;
+  const s = Math.max(block.width / b.sourceWidth, block.height / b.sourceHeight) * b.zoom;
+  const w = b.sourceWidth * s;
+  const h = b.sourceHeight * s;
+  const left = Math.min(0, Math.max(block.width - w, block.width / 2 - b.focusX * w));
+  const top = Math.min(0, Math.max(block.height - h, block.height * 0.45 - b.focusY * h));
   return (
-    <div style={{ position: 'absolute', right: -60, top: 380, width: 720, height: 720 }}>
-      <div style={{ position: 'absolute', inset: 40, borderRadius: '50%', background: `radial-gradient(circle, ${theme.colors.accent}55 0%, transparent 68%)` }} />
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: h.cutout ? 0 : 36, maskImage: h.cutout ? undefined : 'linear-gradient(180deg, #000 70%, transparent 100%)' }}>
-        <Img
-          src={h.src}
-          style={{
-            position: 'absolute',
-            width: size,
-            height: size,
-            objectFit: 'cover',
-            left: 360 - h.focusX * size,
-            top: 300 - h.focusY * size,
-            filter: 'contrast(1.06) saturate(0.9)',
-          }}
-        />
+    <>
+      <div style={{ position: 'absolute', left, top, width: w, height: h, filter: 'contrast(1.08) saturate(0.95)' }}>
+        <Freeze frame={Math.round(b.timeSec * 30)}>
+          <OffthreadVideo src={b.src} muted style={{ width: '100%', height: '100%' }} />
+        </Freeze>
       </div>
-    </div>
-  );
-};
-
-/** Typography-only fallback when no authorised headshot exists. */
-const GiantGlyph: React.FC<{ brand: CoverSpec['brand'] }> = ({ brand }) => {
-  const theme = getTheme(brand);
-  return (
-    <div style={{ position: 'absolute', right: -180, top: 430, opacity: 0.14, transform: 'rotate(-8deg)' }}>
-      <EyeGlyph brand={brand} size={760} strokeWidth={5} color={theme.colors.ink} />
-    </div>
+      {/* edge vignette in the block colour so the block still reads as a solid shape */}
+      <div style={{ position: 'absolute', inset: 0, boxShadow: `inset 0 0 0 18px ${blockColor}, inset 0 0 120px 40px ${blockColor}99` }} />
+    </>
   );
 };

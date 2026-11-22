@@ -77,13 +77,16 @@ export const SAMPLE_COVER: CoverSpec = CoverSpecSchema.parse({
   seriesTitle: 'COURT VISION',
   playerName: 'Marcus Vale',
   teamAbbr: 'DEMO',
-  teamName: 'Synthetic Demo',
+  teamName: 'Demo U',
   statValue: 12,
   statLabel: 'ASSISTS (DEMO DATA)',
+  kicker: 'assists:',
+  statLine: '18p/4r/12a',
+  statSub: '+9',
   headline: 'CAN YOU SEE THE PASS?',
   gameLabel: 'Demo game',
   headshot: null,
-  backdrop: { src: 'fixtures/synthetic_skip_pass.mp4', timeSec: 3.9 },
+  backdrop: { src: 'fixtures/synthetic_skip_pass.mp4', timeSec: 3.9, focusX: skipHandler.x, focusY: skipHandler.y - 0.09, zoom: 3 },
 });
 
 /** Rewrites every media key in a spec through a resolver (local server, signed URL, /api/media…). */

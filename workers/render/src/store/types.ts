@@ -54,7 +54,7 @@ export interface ProjectRecord {
   mediaId: string;
   /** Spec with media keys (not URLs). */
   spec: VideoSpec;
-  cover: Partial<Pick<CoverSpec, 'headline' | 'seriesTitle' | 'statLabel' | 'statValue' | 'teamName'>> & { headshotMediaId?: string | null };
+  cover: Partial<Pick<CoverSpec, 'headline' | 'seriesTitle' | 'statLabel' | 'statValue' | 'teamName' | 'kicker' | 'statLine' | 'statSub' | 'blockColor'>> & { headshotMediaId?: string | null };
   /** Verified stat shown on the cover; null when not verified. */
   notes: string | null;
   latestRenderId: string | null;

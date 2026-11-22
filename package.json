@@ -10,7 +10,7 @@
     "studio": "npm run studio -w @tiresias/video",
     "worker": "npm run start -w @tiresias/render-worker",
     "render:sample": "npm run render:sample -w @tiresias/render-worker",
-    "fixtures": "cd workers/analysis && .venv/bin/python -m tiresias_analysis.fixtures.synthetic_court --out ../../fixtures && .venv/bin/python -m tiresias_analysis.audio.sfx --out ../../packages/video/public/sfx",
+    "fixtures": "cd workers/analysis && .venv/bin/python -m tiresias_analysis.fixtures.synthetic_court --out ../../fixtures && .venv/bin/python -m tiresias_analysis.fixtures.cutout --out ../../fixtures/synthetic_player_cutout.png && .venv/bin/python -m tiresias_analysis.audio.sfx --out ../../packages/video/public/sfx",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:db": "npm run test:db -w @tiresias/render-worker"

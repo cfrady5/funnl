@@ -112,7 +112,8 @@ export function coverForProject(project: ProjectRecord, headshotKey: string | nu
   return {
     ...base,
     ...Object.fromEntries(Object.entries(project.cover).filter(([k, v]) => k !== 'headshotMediaId' && v !== undefined)),
-    headshot: headshotKey ? { src: headshotKey, focusX: 0.5, focusY: 0.3, scale: 1, cutout: false } : null,
+    // Transparent PNGs are treated as cutouts (they break out of the colour block); other images are framed inside it.
+    headshot: headshotKey ? { src: headshotKey, focusX: 0.5, focusY: 0.3, scale: 1, cutout: headshotKey.toLowerCase().endsWith('.png') } : null,
   } as CoverSpec;
 }
 
@@ -157,7 +158,9 @@ export async function seedDemoProjects(samples: VideoSpec[], store: LocalStore =
       mediaId: media.id,
       // The project points at the normalised upload once ingest finishes; until then the fixture key works.
       spec: sample,
-      cover: { statValue: sample.brand === 'tiresias' ? 12 : 6, statLabel: sample.brand === 'tiresias' ? 'ASSISTS (DEMO DATA)' : 'TURNOVERS (DEMO DATA)' },
+      cover: sample.brand === 'tiresias'
+        ? { statValue: 12, statLabel: 'ASSISTS (DEMO DATA)', statLine: '18p/4r/12a', statSub: '+9', teamName: 'Demo U' }
+        : { statValue: 6, statLabel: 'TURNOVERS (DEMO DATA)', statLine: '7p/2r/3a', statSub: '-14', teamName: 'Demo U' },
       notes: 'Demo project on synthetic footage. Names and stats are fictional.',
       latestRenderId: null,
       createdAt: now,

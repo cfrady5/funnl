@@ -33,5 +33,23 @@ Source of truth for tokens: `packages/core/src/brand.ts`. The videos, covers and
 6. Covers use one reusable template per brand. With no authorised headshot, the typography-only layout is used.
 7. The first frame is a complete, readable frame. It is often the default thumbnail.
 
+## Covers (both brands share one editorial template)
+Template: `packages/video/src/cover.tsx`. Preview every variant with `npm run render:covers -w @tiresias/render-worker`.
+- **Page:** cream `#FBF8EF`, ink `#0B0B0C`.
+- **Colour block:** 864×700 at (108, 640), filled with the team primary (`packages/core/src/teams.ts`) and overridable per project. The AntiTiresias block is rotated −2.5° with a hazard stripe along its top edge.
+- **Type:** Inter Tight 900, lowercase, −0.045em tracking, 0.96 line height.
+  - top-left: kicker plus value ("assists: / 13");
+  - top-right: eye mark plus brand, with the headline beneath in grey;
+  - bottom-left: name / team;
+  - bottom-right: verified stat line / plus-minus;
+  - footer: series and content ID in mono.
+- **Image priority:**
+  1. An authorised transparent cutout breaks out of the top of the block.
+  2. A framed authorised photo sits inside the block.
+  3. A still from the rights-cleared clip is cropped on the ball handler.
+  4. Typography only: a giant stat in the block.
+- **Never:** team logos or wordmarks (trademarks), unlicensed headshots, or unverified stats.
+- Everything that matters sits inside the central 3:4 region (y 240–1680) shown in profile grids.
+
 ## Safe areas (1080×1920)
 Keep critical text inside x 60–940 and y 150–1500. That clears the platform UI at the top, the caption and nav area at the bottom, and the action rail on the right.

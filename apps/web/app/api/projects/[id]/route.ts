@@ -19,7 +19,7 @@ export const GET = handle(async (_req: Request, ctx: Ctx) => {
   });
 });
 
-const CoverPatch = CoverSpecSchema.pick({ headline: true, seriesTitle: true, statLabel: true, statValue: true, teamName: true }).partial();
+const CoverPatch = CoverSpecSchema.pick({ headline: true, seriesTitle: true, statLabel: true, statValue: true, teamName: true, kicker: true, statLine: true, statSub: true, blockColor: true }).partial();
 
 export const PATCH = handle(async (req: Request, ctx: Ctx) => {
   const { id } = await ctx.params;
