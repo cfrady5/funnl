@@ -14,7 +14,7 @@ Last reviewed **2026-11-22**. The facts below were read from each provider's own
 | Highlightly | game-level highlight discovery | **mock-tested**. Real host reachable: it returns 401/403 for a placeholder key. **Not yet called with a real key.** |
 | Manual upload | authorised footage | **working** (Phase 1) |
 | Sportradar | fallback stats | not integrated (kept as a fallback, per your decision) |
-| PlayDB | — | not integrated: no API; clips are for personal, non-commercial use |
+| PlayDB | — | **not integrated (by its own terms)**. Re-checked 2026-11-22: see below |
 
 ## BALLDONTLIE: https://docs.balldontlie.io, OpenAPI https://www.balldontlie.io/openapi/nba.yml
 - **Auth:** `Authorization: <API_KEY>` with no "Bearer" prefix. Base `https://api.balldontlie.io`; the OpenAPI paths use `/nba/v1/...`.
@@ -58,6 +58,15 @@ Last reviewed **2026-11-22**. The facts below were read from each provider's own
 - **Highlight fields:** `title`, `url`, `embedUrl`, `imgUrl`, `source` (e.g. youtube), `channel`, `type` (VERIFIED/UNVERIFIED), and `match{id, homeTeam.abbreviation, awayTeam.abbreviation}`. Highlights are **game-level**, not play-level.
 - **Terms §6:** data may be stored and displayed in your own products. Images and visual content are "for identification purposes only", and commercial use of media requires your own permissions. → **link only, not renderable.**
 - **Plans:** free to start; the Basic/Free plan "might have certain restrictions on highlights".
+
+## PlayDB (https://www.playdb.app), re-checked 2026-11-22
+- **Terms of Service** (updated 2026-01-31):
+  - §1: PlayDB "does not host, stream, or distribute NBA video content. All video clips … are hosted on NBA.com".
+  - §2/§7: PlayDB "does not own, license, or have any rights to this content", and use is governed by NBA.com's Terms of Use.
+  - §4 *Personal, Non-Commercial Use Only*: it explicitly prohibits "Monetizing videos on social media or video platforms" and "Using videos in commercial productions". Commercial use requires licences "directly from the NBA".
+  - §3: "You will not attempt to circumvent any technical limitations."
+- **robots.txt:** `Disallow: /search`, `/play/`, `/plays/` and `/api/` for all automated agents. `/search` returns HTTP 403 to non-browser clients.
+- **Decision:** no scraping, downloading or automated lookups. PlayDB is fine for **you** to browse while reviewing a play. It cannot be a footage source for published videos, because it holds no rights to grant and its terms forbid exactly this use.
 
 ## Footage rights (unchanged policy)
 No discovery provider supplies renderable footage. Videos render only from clips in the library whose rights record allows it. The architecture already has a `licensed_feed` clip-source slot (`acquisition: licensed_download`) for a future licensed NBA footage agreement.

@@ -12,7 +12,7 @@ export const CLIP_SOURCE_CATALOG = [
   { id: 'highlightly', name: 'Highlightly', granularity: 'game', acquisition: 'none', display: 'link_only', note: 'Game highlights aggregated from YouTube and other platforms. Data rights only.' },
   { id: 'manual_upload', name: 'Manual upload', granularity: 'play', acquisition: 'licensed_download', display: 'file', note: 'Footage you upload with a rights record. The only renderable source today.' },
   { id: 'licensed_feed', name: 'Licensed footage feed', granularity: 'play', acquisition: 'planned', display: 'file', note: 'Placeholder for a future licensed NBA footage agreement. Not implemented.' },
-  { id: 'playdb', name: 'PlayDB', granularity: 'play', acquisition: 'none', display: 'link_only', note: 'Not integrated: no API; clips are for personal, non-commercial use.' },
+  { id: 'playdb', name: 'PlayDB', granularity: 'play', acquisition: 'none', display: 'link_only', note: 'Not integrated: terms §4 forbid monetised social use; clips are NBA.com’s; robots.txt disallows automated search. Fine for manual browsing only.' },
 ] as const;
 
 export function statsProviders(ctx: ProviderContext = {}): StatsProvider[] {
