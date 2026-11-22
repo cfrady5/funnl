@@ -1,0 +1,38 @@
+{
+  "name": "@tiresias/data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./read": "./src/read.ts"
+  },
+  "scripts": {
+    "db:local": "NODE_USE_ENV_PROXY=1 tsx src/cli/local-db.ts",
+    "db:migrate": "NODE_USE_ENV_PROXY=1 tsx src/cli/migrate.ts",
+    "ingest": "NODE_USE_ENV_PROXY=1 tsx src/cli/ingest.ts",
+    "mock:providers": "NODE_USE_ENV_PROXY=1 tsx src/cli/mock-providers.ts",
+    "probe:balldontlie": "NODE_USE_ENV_PROXY=1 tsx src/cli/probe-balldontlie.ts",
+    "probe:highlightapi": "NODE_USE_ENV_PROXY=1 tsx src/cli/probe-highlightapi.ts",
+    "probe:highlightly": "NODE_USE_ENV_PROXY=1 tsx src/cli/probe-highlightly.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.15",
+    "@electric-sql/pglite-socket": "0.2.18",
+    "@tiresias/core": "0.1.0",
+    "pg": "8.23.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.1",
+    "@types/pg": "8.23.1",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vite": "7.3.7",
+    "vitest": "5.0.5"
+  }
+}

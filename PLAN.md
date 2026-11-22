@@ -19,11 +19,50 @@ Last updated: 2026-11-22.
 | Rights gate on approval | ✅ | e2e asserts block on unknown rights |
 | Supabase migrations + seed + RLS, verified on embedded Postgres | ✅ | `migrations.test.ts` 12/12 |
 
-## Phase 2 — NBA statistics ⛔ (blocked on network/credentials)
-- Provider interface + pure ranking (`rankAssistLeaders`) and DST-safe date logic are done and tested.
-- **Blocked:** this environment's network policy blocks stats.nba.com, cdn.nba.com, ESPN, balldontlie, Sportradar.
-- **Decision needed from you:** provider. Recommendation: Sportradar NBA trial for play-by-play (licensed), or balldontlie ALL-STAR ($9.99/mo) for box scores only. nba_api is acceptable for internal analysis but NBA terms restrict commercial use.
-- Next steps once unblocked: `StatsProvider` implementations, store into `games`/`player_game_stats`/`play_events`, reconcile totals (`verified` flag), bounded retry schedule for late/incomplete games.
+## Phase 2 — Daily NBA data & play discovery 🟡 (built & mock-tested; awaiting real API keys)
+
+### Audit (2026-11-22)
+- Phase 1 entities (media, projects, renders, jobs) live in the local JSON `LocalStore`. The Supabase schema existed but nothing wrote to it.
+- The pure logic Phase 2 needs already exists and is tested: `previousGameDate`, `nextDailyRun`, `rankAssistLeaders`, `scoreCandidate` and `selectClips`.
+- The Daily Pipeline and Play Discovery pages were honest placeholders.
+- Network: a dedicated `funnl` cloud environment now allows api.balldontlie.io, highlightapi.com and highlightly.net (plus their docs hosts).
+
+### Provider facts (read from the providers' own docs and OpenAPI specs on 2026-11-22; see INTEGRATIONS.md)
+| Provider | Role | Documented | Verified working |
+|---|---|---|---|
+| BALLDONTLIE | stats + play-by-play | games (free), `/nba/v1/stats` (ALL-STAR $9.99), `/nba/v1/plays` (**GOAT $39.99**). 7-day GOAT trial at 5 req/min. | host reachable, 401 without key. **Not yet called with a key.** |
+| Highlight API | play-level clip discovery | official team/league X clips matched to exact PBP plays, incl. `assistPlayerNameInitial`. **Embed only — no download/re-host.** | host reachable. **No key.** |
+| Highlightly | game-level highlight discovery | `/highlights?date=&timezone=`, YouTube etc. URLs/embeds. Terms grant data rights only, no media rights. | host reachable. **No key.** |
+| Manual upload | authorised footage | — | ✅ working (Phase 1) |
+| Sportradar | fallback stats | — | not integrated (fallback only) |
+
+**Assist linkage risk:** BALLDONTLIE plays have no explicit assist field, only `text` + `participants[]`. The extractor parses "(Name assists)" from the text, checks the name against the participants and the game roster, and **reconciles per-player counts with box-score `ast`**. Unmatched plays are flagged and never guessed. The exact text format must be confirmed with one real call (`npm run probe:balldontlie`).
+
+### Tasks
+| # | Task | Status |
+|---|---|---|
+| 2.1 | Postgres data layer (`@tiresias/data`) over `DATABASE_URL` → Supabase in production. Local Postgres-protocol server (PGlite + multiplexer) and migration runner. | ✅ |
+| 2.2 | Migration: provider request archive, clip references, assist/turnover columns on play events, run steps, leader views | ✅ |
+| 2.3 | Pure NBA logic in core: clock parsing, name matching, assist/turnover extraction, box-score reconciliation, clip↔play linking | ✅ |
+| 2.4 | HTTP client with rate limiting (token bucket), retry/backoff on 429/5xx, raw-response archive (source + retrieval timestamp) | ✅ |
+| 2.5 | `StatsProvider`: BALLDONTLIE adapter (games, stats, plays) + Sportradar stub (not implemented, fallback) | 🟡 BALLDONTLIE adapter mock-tested; real key pending. Sportradar: fallback, not built |
+| 2.6 | `ClipDiscoveryProvider` adapters: Highlight API (play-level), Highlightly (game-level), manual library, synthetic. Capability + rights flags per adapter. | 🟡 Highlight API + Highlightly adapters mock-tested; manual library working; licensed feed = placeholder |
+| 2.7 | Daily ingestion workflow, checkpointed per stage: date → games → completeness → box scores → rank top 15 → plays → assists → clip discovery → linking → candidate scoring. Bounded retry for late or incomplete games. | ✅ |
+| 2.8 | Scheduler in the worker: 08:00 America/New_York, idempotency key per date, retry ladder 08:00 / 08:30 / 09:30 / 11:00 / 14:00 | ✅ |
+| 2.9 | Dashboard: Daily Pipeline (runs, stages, per-stage retry), Play Discovery (top 5 prominent, top 15, games, candidate plays with clip refs), Studio home "Last night" panel | ✅ |
+| 2.10 | Candidate → video project. Uses the Phase 1 templates unchanged. Blocked to "awaiting footage" unless authorised footage is attached. | ✅ (needs authorised footage attached) |
+| 2.11 | Reproducible local probe scripts for each provider (run with your keys), raw responses saved as test fixtures | ✅ |
+| 2.12 | Tests: unit (pure logic), adapter contract tests against a local mock server serving doc-shaped responses, pipeline end-to-end on embedded Postgres | ✅ |
+
+### Verified vs not (2026-11-22)
+- ✅ The pipeline runs end to end through the real adapters, HTTP client and SQL, against Postgres and the simulated providers. It is driven by the worker's scheduler and by "Run now". 71 automated tests pass.
+- ✅ The real BALLDONTLIE and Highlightly hosts answer from this environment; both reject a placeholder key, as expected.
+- ⛔ Highlight API: the API host is unreachable from here (proxy reports no route). It must be verified locally with `npm run probe:highlightapi`.
+- ⏳ **Not yet verified with real data:** assist-text format, real game/box/plays payloads, clip linking accuracy. One probe run with your keys settles this.
+
+### Decisions needed
+- BALLDONTLIE tier. ALL-STAR gives leaders only. GOAT is required for play-by-play, i.e. individual assists. Recommendation: start the 7-day GOAT trial, run the probe, then decide.
+- Highlight API has no public price ("Get API Access"), so contact the vendor.
 
 ## Phase 3 — Clip discovery 🟡
 - ✅ Scoring (10 weighted, transparent factors) and selection (both modes, never substitutes ineligible clips).

@@ -181,3 +181,16 @@ describe('scoring and selection', () => {
     expect(selectClips(lines, clips, 'best_from_pool', 5).map((c) => c.clipId)).toEqual(['c1', 'c3']);
   });
 });
+
+describe('daily schedule slots', () => {
+  it('nothing is due before 08:00 New York', async () => {
+    const { dueScheduleSlots } = await import('../src');
+    expect(dueScheduleSlots(new Date('2026-11-22T12:59:00Z')).slots).toEqual([]); // 07:59 EST
+  });
+  it('slots accumulate through the retry ladder (EST and EDT)', async () => {
+    const { dueScheduleSlots } = await import('../src');
+    expect(dueScheduleSlots(new Date('2026-11-22T13:00:00Z'))).toEqual({ gameDate: '2026-11-21', slots: ['08:00'] });
+    expect(dueScheduleSlots(new Date('2026-11-22T16:05:00Z')).slots).toEqual(['08:00', '08:30', '09:30', '11:00']);
+    expect(dueScheduleSlots(new Date('2026-07-10T12:31:00Z')).slots).toEqual(['08:00', '08:30']); // EDT
+  });
+});

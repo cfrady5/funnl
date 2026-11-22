@@ -149,6 +149,7 @@ export async function renderProject(job: JobRecord, store: LocalStore): Promise<
 export const HANDLERS: Record<JobRecord['type'], (job: JobRecord, store: LocalStore) => Promise<void>> = {
   ingest_media: ingestMedia,
   render_project: renderProject,
+  daily_ingest: (job, store) => import('./daily').then((m) => m.dailyIngest(job, store)),
 };
 
 /** Process a single job; returns false when the queue is empty. */

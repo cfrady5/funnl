@@ -39,14 +39,16 @@ try {
   await page.getByText('Live preview').waitFor();
   await page.waitForTimeout(2500); // fonts + first player frame
   const playerText = () => page.locator('.__remotion-player').first().innerText();
-  assert((await playerText()).includes('CAN YOU SEE THE PASS'), 'Remotion player renders the hook text');
+  const currentHook = (await page.locator('label:has-text("Hook") input').inputValue()).toUpperCase();
+  assert((await playerText()).includes(currentHook), `Remotion player renders the hook text ("${currentHook}")`);
   await shot(page, '02-editor');
 
   step('Change the hook and see the preview update live');
   const hook = page.locator('label:has-text("Hook") input');
-  await hook.fill('CAN YOU FIND THE SKIP PASS?');
+  const newHook = currentHook === 'CAN YOU FIND THE SKIP PASS?' ? 'CAN YOU SEE THE SKIP PASS?' : 'CAN YOU FIND THE SKIP PASS?';
+  await hook.fill(newHook);
   await page.waitForTimeout(600);
-  assert((await playerText()).includes('CAN YOU FIND THE SKIP PASS'), 'preview reflects the edited hook');
+  assert((await playerText()).includes(newHook), 'preview reflects the edited hook');
   assert(await page.getByText('unsaved').isVisible(), 'editor marks the project unsaved');
 
   step('Drag passing option B on the source frame');

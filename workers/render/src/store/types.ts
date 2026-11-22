@@ -82,7 +82,7 @@ export interface RenderRecord {
   finishedAt: string | null;
 }
 
-export type JobType = 'ingest_media' | 'render_project';
+export type JobType = 'ingest_media' | 'render_project' | 'daily_ingest';
 
 export interface JobRecord {
   id: string;

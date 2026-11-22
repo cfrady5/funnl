@@ -4,17 +4,46 @@ import { BrandBadge, ContentStatusBadge } from '@/components/status';
 import { Card, CardBody, CardHeader, CardTitle, EmptyState, PageHeader } from '@/components/ui';
 import { fileUrl, fmtAgo } from '@/lib/client';
 import { readDb } from '@/lib/server';
+import { previousGameDate } from '@tiresias/core';
+import { dateUsesSimulatedData, leaders } from '@tiresias/data';
+import { LeaderCard, SimulatedBanner } from '@/components/nba-views';
+import { RunPipelineButton } from '@/components/nba';
+import { withDb } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Studio() {
   const db = await readDb();
+  const gameDate = previousGameDate();
+  const last = await withDb(async (d) => ({ leaders: await leaders(d, gameDate, 'assists'), simulated: await dateUsesSimulatedData(d, gameDate) }));
   return (
     <>
       <PageHeader
         title="Video Studio"
         description="Create Court Vision videos from authorised clips. Set the freeze frame, place the passing options, write the explanation, preview live, then render the MP4 and cover."
       />
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Last night · {gameDate} · assist leaders</CardTitle>
+          <Link href={`/discovery?date=${gameDate}`} className="text-xs text-info hover:underline">All plays & top 15 →</Link>
+        </CardHeader>
+        <CardBody>
+          {!last.ok ? (
+            <div className="text-sm text-muted">Connect a database to see last night’s leaders ({last.reason})</div>
+          ) : last.data.leaders.length === 0 ? (
+            <div className="flex items-center gap-3 text-sm text-muted">No ingestion for {gameDate} yet. <RunPipelineButton date={gameDate} label="Ingest now" size="sm" /></div>
+          ) : (
+            <>
+              {last.data.simulated ? <SimulatedBanner /> : null}
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-5">
+                {last.data.leaders.slice(0, 5).map((l) => (
+                  <LeaderCard key={l.playerId} l={l} href={`/discovery?date=${gameDate}&player=${l.playerId}`} />
+                ))}
+              </div>
+            </>
+          )}
+        </CardBody>
+      </Card>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>New project</CardTitle>

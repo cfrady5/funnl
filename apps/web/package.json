@@ -23,7 +23,8 @@
     "remotion": "4.0.540",
     "server-only": "^0.0.1",
     "tailwind-merge": "3.3.1",
-    "zod": "4.6.7"
+    "zod": "4.6.7",
+    "@tiresias/data": "0.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.1.16",

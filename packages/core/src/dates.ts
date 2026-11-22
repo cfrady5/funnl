@@ -76,3 +76,25 @@ export function nextDailyRun(now: Date, hhmm = '08:00', timeZone = NBA_TZ): Date
 export function dailyRunKey(brand: string, gameDate: string, workflow = 'daily'): string {
   return `${workflow}:${brand}:${gameDate}`;
 }
+
+/** Retry ladder after the daily run time, in minutes: 08:00, 08:30, 09:30, 11:00, 14:00 by default. */
+export const RETRY_LADDER_MINUTES = [0, 30, 90, 180, 360] as const;
+
+/**
+ * Schedule slots that are due "now" for the game date being processed today.
+ * Returns slot labels (HH:MM in the zone) whose time has passed; the caller
+ * enqueues each at most once (idempotency key per slot) and stops once a run
+ * completes with all games final.
+ */
+export function dueScheduleSlots(now: Date, runTime = '08:00', timeZone = NBA_TZ, ladder: readonly number[] = RETRY_LADDER_MINUTES): { gameDate: string; slots: string[] } {
+  const today = zonedDateString(now, timeZone);
+  const base = zonedTimeToUtc(today, runTime, timeZone).getTime();
+  const slots = ladder
+    .map((m) => new Date(base + m * 60_000))
+    .filter((t) => t.getTime() <= now.getTime())
+    .map((t) => {
+      const p = new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(t);
+      return p;
+    });
+  return { gameDate: addDays(today, -1), slots };
+}

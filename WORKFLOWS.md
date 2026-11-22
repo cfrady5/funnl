@@ -13,16 +13,19 @@
 5. **Approve.** This requires QA to have passed and the footage to be cleared for social publication. Otherwise approval is refused with the reasons.
 6. **Content Queue** → download the MP4 and PNG (Mode 1, manual).
 
-## Planned: daily automation (Phase 5)
-08:00 America/New_York (`nextDailyRun`, DST-safe). Idempotency key: `daily:<brand>:<gameDate>`.
-```
-date → games → box scores → rank top 15 → play-by-play → candidate assists → acquire authorised clips
-     → score → select (≤5 Tiresias, ≤3 AntiTiresias) → analyse → draft text (Claude) → render → notify
-```
-- **Checkpoints:** each stage is a `workflow_steps` row with a checkpoint, so stages can be retried individually.
-- **Incomplete data:** if games are unfinished or the feed is delayed, retry on a bounded schedule (e.g. 08:00, 08:30, 09:30, 11:00), then mark the run `incomplete_reason` and continue with whatever is verified.
-- **Shortfalls:** fewer qualifying clips produce fewer videos. Nothing is substituted.
-- **Budget:** the run halts when `daily_costs.total_usd` would exceed the configured budget.
+## Daily NBA ingestion (Phase 2, built)
+- **Schedule:** the worker ticks every minute. From 08:00 America/New_York it enqueues `daily_ingest` for the previous NBA date. If a run is incomplete or failed, it retries at +30, +90, +180 and +360 minutes (`dueScheduleSlots`, DST-safe). Each slot runs at most once (idempotency key `daily:<date>:<slot>`), and the ladder stops once a run completes with every game final.
+- **Stages** (each is a `workflow_steps` row with its output; retry any stage from Daily Pipeline):
+  1. **games:** `/nba/v1/games?dates[]=`. Unfinished games are flagged (`incomplete_reason`) and the run continues with final games only.
+  2. **box_scores:** `/nba/v1/stats`. Player points must sum to each team's final score (`box_verified`).
+  3. **leaders:** top 15 by assists (deterministic tie-breaks) plus top 10 by turnovers, frozen in `daily_leaders`.
+  4. **plays:** `/nba/v1/plays` for the leaders' games; every play is stored.
+  5. **events:** assists and turnovers are attributed to players and reconciled with the box score.
+  6. **clips:** each configured clip provider. Unconfigured providers are skipped; one failing provider doesn't block the others.
+  7. **links:** play-level clips are linked to assists by period, clock, wall clock, team and names.
+  8. **candidates:** every leader's assist (Tiresias) and turnover (AntiTiresias) is scored transparently and starts as `awaiting_footage`.
+- **Each morning:** Video Studio shows last night's top 5. Play Discovery lists each leader's plays with clip references. **Create video** attaches an authorised clip and opens a Phase 1 project pre-filled from the verified box score.
+- **Run by hand:** `npm run ingest -w @tiresias/data -- --date YYYY-MM-DD [--from stage]`, or the dashboard buttons. Both enqueue work for the worker or run the CLI; nothing runs inside a web request.
 
 ## Jobs
 - **Status flow:** `queued → running → succeeded | failed | cancelled`.

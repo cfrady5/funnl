@@ -5,6 +5,7 @@ import { ContentStatusBadge, JobStatusBadge } from '@/components/status';
 import { Button, Card, CardBody, CardHeader, CardTitle, EmptyState, NotBuilt, PageHeader, Stat } from '@/components/ui';
 import { fmtAgo } from '@/lib/client';
 import { readDb } from '@/lib/server';
+import { withDb } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,15 @@ export default async function Overview() {
   const failedJobs = db.jobs.filter((j) => j.status === 'failed').length;
   const awaiting = db.projects.filter((p) => p.status === 'ready_for_approval').length;
   const published = db.projects.filter((p) => p.status === 'published').length;
+  const gameDate = previousGameDate();
+  const nba = await withDb((d) =>
+    d.one<{ games: number; players: number; candidates: number }>(
+      `select (select count(*)::int from public.games where game_date = $1 and status = 'final' and provider = 'balldontlie') games,
+              (select count(*)::int from public.player_game_stats s join public.games g on g.id = s.game_id where g.game_date = $1) players,
+              (select count(*)::int from public.candidate_clips where game_date = $1) candidates`,
+      [gameDate],
+    ),
+  );
   return (
     <>
       <PageHeader
@@ -26,9 +36,9 @@ export default async function Overview() {
         actions={<Button asChild><Link href="/studio">Open Video Studio</Link></Button>}
       />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label="Games processed today" value="—" hint="Stats provider not connected (Phase 2)" />
-        <Stat label="Players evaluated" value="—" hint="Stats provider not connected" />
-        <Stat label="Candidate clips" value={db.media.filter((m) => m.status === 'ready').length} hint="Uploaded clips ready for editing" />
+        <Stat label={`Games processed · ${gameDate}`} value={nba.ok ? nba.data?.games ?? 0 : '—'} hint={nba.ok ? 'Final games ingested' : 'Database not connected'} />
+        <Stat label="Players evaluated" value={nba.ok ? nba.data?.players ?? 0 : '—'} hint="Box-score lines" />
+        <Stat label="Candidate plays" value={nba.ok ? nba.data?.candidates ?? 0 : '—'} hint={`${db.media.filter((m) => m.status === 'ready').length} authorised clips in library`} />
         <Stat label="Videos generated today" value={rendersToday.length} />
         <Stat label="Awaiting approval" value={awaiting} tone={awaiting ? 'warn' : undefined} />
         <Stat label="Published" value={published} hint="Publishing not connected (Phase 6)" />
@@ -83,7 +93,7 @@ export default async function Overview() {
         </Card>
       </div>
       <div className="mt-6">
-        <NotBuilt phase="Phase 5">The automated 08:00 America/New_York run is not scheduled yet. The DST-safe schedule maths, idempotency keys and job queue are implemented and tested.</NotBuilt>
+        <NotBuilt phase="Phase 5">Daily ingestion runs from the worker at 08:00 America/New_York with a retry ladder for late games. Fully automatic video generation (footage acquisition + analysis) is not built yet: candidates need authorised footage attached.</NotBuilt>
       </div>
     </>
   );

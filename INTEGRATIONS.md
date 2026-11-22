@@ -1,54 +1,86 @@
-# Integrations — verified capabilities and blockers (2026-11-22)
+# Integrations: documented capabilities vs verified behaviour
 
-**Method.** This environment's network blocks most target hosts, so the facts below come from official documentation as surfaced by web search, plus the nba_api GitHub source. Re-read the live page before relying on exact numbers. Nothing is marked as working until it has been exercised end to end. This is not legal advice.
+Last reviewed **2026-11-22**. The facts below were read from each provider's own docs and OpenAPI specs (fetched directly, not from memory).
 
-**Reachable from this environment:** npm, PyPI, `api.anthropic.com`, Google Fonts.
-**Blocked:** stats.nba.com, cdn.nba.com, site.api.espn.com, api.balldontlie.io, playdb.app, highlightapi.com, open.tiktokapis.com, graph.facebook.com, supabase.com.
+**Status vocabulary** (also shown live on the dashboard's Integrations page):
+- **documented:** described in the provider's docs; not yet exercised.
+- **mock-tested:** the real adapter (paths, params, auth headers, pagination, error handling) runs against a local simulated server that serves the documented response shapes.
+- **verified:** a successful call to the provider's *official* host is recorded in `provider_requests`. Calls to the mock never count.
 
-## Bottom line
-**Footage rights are the critical-path blocker, not engineering.** No source found (NBA.com, nba_api video endpoints, PlayDB, Highlightly, the data vendors) grants a licence to republish NBA video on social platforms. The system therefore supports:
-1. licensed footage, or footage with documented permission, entered through upload, with a rights record; and
-2. owned synthetic footage, for testing.
-
-A licence from the NBA or the relevant rights holder is needed before NBA footage can be published. An alternative product direction is original animated court diagrams built from licensed play-by-play data.
-
-## Stats
-| Source | Verified | Blockers |
+| Provider | Role | Status today |
 |---|---|---|
-| nba_api (MIT, unofficial) | Endpoints `ScoreboardV2/V3`, `BoxScoreTraditionalV3`, `PlayByPlayV3`, `VideoEventsAsset` (github.com/swar/nba_api docs). stats.nba.com needs browser-like headers. The README warns that cloud IPs (AWS/GCP/Azure) are often blocked. | NBA Terms (nba.com/termsofuse): stats only for news reporting or private non-commercial use, with attribution. A monetised channel needs legal review. |
-| cdn.nba.com liveData | Used by nba_api's `live` module. | No official documentation; endpoints are undocumented. |
-| Sportradar NBA | `x-api-key` header; 30-day trial (developer.sportradar.com). | Images add-on excludes name, image and likeness rights. |
-| SportsDataIO | Sales-led production keys; headshots licensed via USA Today. | Pricing via sales. |
-| balldontlie | `Authorization: <key>`; Free 5 req/min, ALL-STAR $9.99/mo (player stats), GOAT $39.99/mo. | No play-level video IDs. |
+| BALLDONTLIE | games, box scores, play-by-play | **mock-tested**. Real host reachable: it returns 401 for a placeholder key and the adapter reports "denied (key/tier)". **Not yet called with a real key.** |
+| Highlight API | play-level clip discovery | **mock-tested**. Docs host reachable. The API host `api.highlightapi.com` is **unreachable from this environment** (the proxy reports no route / no public DNS even though the host is allowed). Run the probe locally. |
+| Highlightly | game-level highlight discovery | **mock-tested**. Real host reachable: it returns 401/403 for a placeholder key. **Not yet called with a real key.** |
+| Manual upload | authorised footage | **working** (Phase 1) |
+| Sportradar | fallback stats | not integrated (kept as a fallback, per your decision) |
+| PlayDB | — | not integrated: no API; clips are for personal, non-commercial use |
 
-## Clip discovery
-| Source | Verified | Decision |
-|---|---|---|
-| PlayDB (playdb.app) | Fan-built search, "not affiliated with the NBA". Clips are "sourced from NBA.com … for personal, non-commercial use only". No API found. | **Do not integrate or scrape.** |
-| "Highlight API" (highlightapi.com) | The domain could not be resolved. The closest real product is **Highlightly** (highlightly.net): `x-rapidapi-key` header, NBA highlights aggregated from YouTube, X and Reddit with URL or `embedUrl`. | Metadata and discovery only, and only if this is the intended vendor (**please confirm**). It grants no video rights. |
+## BALLDONTLIE: https://docs.balldontlie.io, OpenAPI https://www.balldontlie.io/openapi/nba.yml
+- **Auth:** `Authorization: <API_KEY>` with no "Bearer" prefix. Base `https://api.balldontlie.io`; the OpenAPI paths use `/nba/v1/...`.
+- **Pricing:** priced per league. Annual billing saves 20%.
 
-## Headshots
-- ESPN and NBA CDN headshots carry no reuse licence, so **they are not used**.
-- Getty Images is the NBA's official photo agency. NBA imagery needs approval; editorial web use defaults to a 30-day display limit.
-- Player publicity rights apply separately from photo copyright.
-- Covers fall back to a typography-only layout. A user-uploaded image can be used when rights are recorded.
+  | Tier | $/mo | req/min | NBA endpoints we need |
+  |---|---|---|---|
+  | Free | 0 | 5 | Games |
+  | ALL-STAR | 9.99 | 60 | + Game Player Stats (`/stats`), so assist leaders are possible |
+  | GOAT | 39.99 | 600 | + **Plays** (`/plays`), Box Scores. Needed for individual assists |
 
-## Publishing
-| Platform | Verified requirements |
-|---|---|
-| TikTok Content Posting API | Direct Post needs the `video.publish` scope. **Unaudited clients can post only `SELF_ONLY` (private)**, and the posting account must be private (otherwise 403 `unaudited_client_can_only_post_to_private_accounts`). Upload-to-inbox needs `video.upload`, with a limit of 5 pending shares per 24 h. Media is sent by `FILE_UPLOAD` or `PULL_FROM_URL`; the latter needs a verified domain. About 15 posts/day per creator. The cover is set only by `video_cover_timestamp_ms`, so the cover design should also appear in a video frame. |
-| Instagram Reels | Needs a professional account and `instagram_business_content_publish` (Instagram Login). Flow: a container with `media_type=REELS` and `video_url` (public HTTPS) or a resumable upload, then `media_publish`. `cover_url` is supported. The daily limit varies by doc (50 vs 100), so query `content_publishing_limit`. Standard Access covers your own accounts. |
-| YouTube Data API | Uses `videos.insert`. **Uploads from unverified projects (created after 2020-07-28) are locked private** until an audit is passed. Vertical videos up to 3 min are Shorts. `thumbnails.set` needs a phone-verified channel. Quota figures changed in 2025; check the Cloud Console. |
+  A 7-day GOAT trial is available (card required, 5 req/min during the trial, one trial per league).
+- **Endpoints used:**
+  - `GET /nba/v1/games?dates[]=YYYY-MM-DD&per_page=100&cursor=`
+  - `GET /nba/v1/stats?game_ids[]=…&per_page=100&cursor=`. Player stats; `min` is a string; `plus_minus` is nullable.
+  - `GET /nba/v1/plays?game_id=`. Chronological plays with `order`, `type`, `text`, `period`, `clock` ("M:SS" or decimal seconds), `scoring_play`, `score_value`, `team`, `wallclock` and `participants[]` (player ids).
+- **Pagination:** cursor-based. `meta.next_cursor` is *omitted* (not null) on the last page.
+- **Game status:** `status_state` ∈ scheduled | in_progress | **final** | postponed | canceled | delayed | suspended | abandoned | unknown.
+- **Assist linkage (the key Phase 2 risk):** plays have **no explicit assist field**, only `text` and `participants[]`. The docs' example plays show no assisted make, so the exact assist text format is **unverified**. The extractor:
+  - accepts both `(Name assists)` (ESPN style) and `(F. Name N AST)` (official feed style);
+  - resolves names against the game roster and never guesses between two candidates;
+  - marks each attribution `confirmed` (name plus id in `participants`), `text_only` or `unresolved`;
+  - reconciles every player's count with the box-score `ast`.
 
-## Other
-- **Remotion:** free for individuals and companies of up to 3 people. Above that a Company Licence is required: Automators $0.01/render with a $100/mo minimum, or Creators $25/seat/mo.
-- **TTS:** the ElevenLabs free tier has no commercial licence. OpenAI TTS requires disclosing that the voice is AI-generated. Google Cloud TTS output may be used in media under the GCP terms.
-- **Anthropic API:** reachable. Default model `claude-opus-5-5` ($4/$20 per MTok). Not yet called by the app.
+  The first real probe (below) settles the format.
 
-## Credentials needed (only when that phase starts)
-| Phase | What | Where |
-|---|---|---|
-| 2 | Stats provider key + network allowance for its host | env `STATS_PROVIDER`, `SPORTRADAR_API_KEY` / `BALLDONTLIE_API_KEY` |
-| 4 | `ANTHROPIC_API_KEY` | env (never committed) |
-| prod | Supabase URL, anon key, service role key | env |
-| 6 | TikTok / Meta / Google OAuth apps | Supabase Vault |
+## Highlight API: https://www.highlightapi.com/docs.html
+- **What it is:** official team, league and broadcast-partner clips posted on X, matched by a model to the exact play in the official play-by-play.
+- **Auth and endpoints:**
+  - `X-API-Key` header. Base `https://api.highlightapi.com`.
+  - `GET /v1/nba/games?date=` (U.S. Eastern date). Game id format is `nba-{date}-{away}-{home}`.
+  - `GET /v1/nba/games/:id/clips?status=matched`.
+- **Clip fields:** `tweetId`, `embedUrl`, `thumbnailUrl`, `matchConfidence` (high/medium/low), and `matchedPlay`. The matched play includes `timeActual`, `period`, `clock` (ISO duration `PT04M59.00S`), `player`, `teamTricode`, `description` and `assistPlayerNameInitial`.
+- **Linking:** we join to BALLDONTLIE plays on period, clock, wall clock, team, assister and scorer.
+- **Rights (verbatim):** "Do not download or re-host the video files… all playback goes through official X embeds." So clips are **discovery and reference only, never render sources**.
+- **Limits and price:** Development tier 60 req/min, burst 120. No public price ("Get API Access").
+
+## Highlightly: https://highlightly.net/nba-api/documentation/ (OpenAPI 4.1.4)
+- **Base URL:** `https://nba.highlightly.net` (or the RapidAPI host). Header `x-rapidapi-key`, plus `x-rapidapi-host` only on RapidAPI.
+- **Endpoint:** `GET /highlights?date=&timezone=America/New_York&leagueName=NBA&limit≤40&offset`.
+- **Highlight fields:** `title`, `url`, `embedUrl`, `imgUrl`, `source` (e.g. youtube), `channel`, `type` (VERIFIED/UNVERIFIED), and `match{id, homeTeam.abbreviation, awayTeam.abbreviation}`. Highlights are **game-level**, not play-level.
+- **Terms §6:** data may be stored and displayed in your own products. Images and visual content are "for identification purposes only", and commercial use of media requires your own permissions. → **link only, not renderable.**
+- **Plans:** free to start; the Basic/Free plan "might have certain restrictions on highlights".
+
+## Footage rights (unchanged policy)
+No discovery provider supplies renderable footage. Videos render only from clips in the library whose rights record allows it. The architecture already has a `licensed_feed` clip-source slot (`acquisition: licensed_download`) for a future licensed NBA footage agreement.
+
+## Verify with your own keys (reproducible, runs on any machine)
+```bash
+npm install
+BALLDONTLIE_API_KEY=…  npm run probe:balldontlie  -w @tiresias/data -- --date 2026-11-21 --rpm 5
+HIGHLIGHT_API_KEY=…    npm run probe:highlightapi -w @tiresias/data -- --date 2026-11-21
+HIGHLIGHTLY_API_KEY=…  npm run probe:highlightly  -w @tiresias/data -- --date 2026-11-21
+```
+- **Output:** raw responses and a `report.json` under `data/probes/<provider>/<date>/`.
+- **BALLDONTLIE report:** shows which endpoints your plan reaches, sample assist texts, the participants pattern, and whether every box-score assist was tied to exactly one play (`assistsVerified`).
+- **Next step:** share the report if the verdict is NOT VERIFIED, and I'll adapt the parser to the real format.
+
+## Network (cloud environment `funnl`)
+- **Allowed hosts:** api/docs/www.balldontlie.io, highlightapi.com, www.highlightapi.com, api.highlightapi.com, highlightly.net, nba.highlightly.net, sports.highlightly.net, plus your Supabase host.
+- **Proxy support:** provider scripts set `NODE_USE_ENV_PROXY=1` so Node's `fetch` honours `HTTPS_PROXY`. This is harmless where no proxy exists.
+
+## Other services
+- **TikTok:** Direct Post needs `video.publish`, and unaudited clients post `SELF_ONLY`.
+- **Instagram:** Reels need a professional account and `instagram_business_content_publish`.
+- **YouTube:** uploads from unverified projects stay private until audit.
+- **Remotion:** a company licence is needed for teams of more than 3 people.
+- **Claude API:** `claude-opus-5-5`, $4 / $20 per MTok.
+- **Headshots:** no ESPN or NBA CDN images; only licensed or uploaded images with rights.
