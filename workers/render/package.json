@@ -1,0 +1,38 @@
+{
+  "name": "@tiresias/render-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./store": "./src/store/index.ts",
+    "./media": "./src/media-server.ts",
+    "./config": "./src/config.ts"
+  },
+  "scripts": {
+    "start": "tsx src/worker.ts",
+    "render:sample": "tsx src/cli/render-sample.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run",
+    "test:db": "vitest run test/migrations.test.ts"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.540",
+    "@remotion/renderer": "4.0.540",
+    "@tiresias/core": "0.1.0",
+    "@tiresias/video": "0.1.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.540",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.15",
+    "@types/node": "22.19.1",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vite": "^7.3.7",
+    "vitest": "5.0.5"
+  }
+}

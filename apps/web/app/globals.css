@@ -1,0 +1,78 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Inter Tight';
+  font-weight: 500;
+  src: url('/fonts/inter-tight-latin-500-normal.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter Tight';
+  font-weight: 700;
+  src: url('/fonts/inter-tight-latin-700-normal.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter Tight';
+  font-weight: 800;
+  src: url('/fonts/inter-tight-latin-800-normal.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-weight: 500;
+  src: url('/fonts/jetbrains-mono-latin-500-normal.woff2') format('woff2');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Anton';
+  font-weight: 400;
+  src: url('/fonts/anton-latin-400-normal.woff2') format('woff2');
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-bg: #07090c;
+  --color-panel: #0d1117;
+  --color-panel-2: #121821;
+  --color-line: #1e2733;
+  --color-line-2: #2a3544;
+  --color-ink: #eef0f3;
+  --color-muted: #8b96a6;
+  --color-faint: #5b6676;
+  --color-accent: #5be7c4;
+  --color-accent-ink: #03130e;
+  --color-warn: #ffb547;
+  --color-danger: #ff5d5d;
+  --color-anti: #ffd400;
+  --color-info: #4cc9f0;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 35%, transparent);
+}
+
+/* thin, quiet scrollbars for an ops console */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-2) transparent;
+}
+
+input[type='range'] {
+  accent-color: var(--color-accent);
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@tiresias/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "1.2.3",
+    "@remotion/player": "4.0.540",
+    "@tiresias/core": "0.1.0",
+    "@tiresias/render-worker": "0.1.0",
+    "@tiresias/video": "0.1.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "lucide-react": "0.546.0",
+    "next": "16.4.6",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.540",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "3.3.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.1.16",
+    "@types/node": "22.19.1",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "tailwindcss": "4.1.16",
+    "typescript": "5.9.3"
+  }
+}

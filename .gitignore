@@ -1,31 +1,20 @@
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# next.js
-/.next/
-/out/
-next-env.d.ts
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env
-.env*.local
-
-# typescript
+node_modules/
+.next/
+out/
+dist/
 *.tsbuildinfo
-
-# vercel
-.vercel
+.env
+.env.*
+!.env.example
+# local runtime data (uploads, renders, job store)
+/data/
+/workers/analysis/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# rendered outputs are reproducible from specs
+/fixtures/*.mp4
+/fixtures/*.wav
+/fixtures/frames/
+.DS_Store
+/fixtures/*.json

@@ -1,45 +1,19 @@
 {
-  "name": "srchr",
-  "version": "0.1.0",
+  "name": "tiresias-content-engine",
   "private": true,
-  "description": "srchr — search intelligence and marketing audit platform (srchr.xyz).",
+  "version": "0.1.0",
+  "description": "Autonomous basketball content production system for the Tiresias and AntiTiresias brands.",
+  "workspaces": ["packages/*", "apps/*", "workers/render"],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "dev": "npm run dev -w @tiresias/web",
+    "build": "npm run build -w @tiresias/web",
+    "studio": "npm run studio -w @tiresias/video",
+    "worker": "npm run start -w @tiresias/render-worker",
+    "render:sample": "npm run render:sample -w @tiresias/render-worker",
+    "fixtures": "cd workers/analysis && .venv/bin/python -m tiresias_analysis.fixtures.synthetic_court --out ../../fixtures && .venv/bin/python -m tiresias_analysis.audio.sfx --out ../../packages/video/public/sfx",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:db": "npm run test:db -w @tiresias/render-worker"
   },
-  "dependencies": {
-    "@radix-ui/react-dialog": "^1.1.4",
-    "@radix-ui/react-label": "^2.1.1",
-    "@radix-ui/react-progress": "^1.1.1",
-    "@radix-ui/react-select": "^2.1.4",
-    "@radix-ui/react-separator": "^1.1.1",
-    "@radix-ui/react-slot": "^1.1.1",
-    "@radix-ui/react-tabs": "^1.1.2",
-    "@radix-ui/react-tooltip": "^1.1.6",
-    "@supabase/ssr": "^0.5.2",
-    "@supabase/supabase-js": "^2.47.10",
-    "cheerio": "^1.0.0",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.469.0",
-    "next": "15.1.9",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "recharts": "^2.15.0",
-    "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.24.1"
-  },
-  "devDependencies": {
-    "@types/node": "^20.17.10",
-    "@types/react": "^19.0.2",
-    "@types/react-dom": "^19.0.2",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2"
-  }
+  "engines": { "node": ">=20" }
 }
