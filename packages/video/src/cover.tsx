@@ -49,7 +49,8 @@ export const Cover: React.FC<CoverProps> = ({ cover }) => {
       {/* Top-left: kicker + stat value */}
       <div style={{ position: 'absolute', left: block.x, top: block.y - 178, ...heavy, fontSize: 64 }}>
         <div>{(cover.kicker ?? cover.statLabel).toLowerCase()}</div>
-        <div style={{ fontSize: 76 }}>{cover.statValue ?? '—'}</div>
+        {/* No verified stat → the line is omitted rather than shown as a placeholder. */}
+        {cover.statValue != null ? <div style={{ fontSize: 76 }}>{cover.statValue}</div> : null}
       </div>
 
       {/* Top-right: brand mark + headline */}

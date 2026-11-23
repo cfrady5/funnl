@@ -68,7 +68,8 @@ export function checkRights(
   if (!rights.allowedUses.includes(use)) {
     reasons.push(`Allowed uses (${rights.allowedUses.join(', ') || 'none'}) do not include "${use}".`);
   }
-  if (use !== 'internal_preview') {
+  {
+    // Publication / commercial use (internal_preview returned above).
     if (!rights.redistributionPermitted) reasons.push('Public redistribution is not permitted.');
     if (!rights.rightsHolder) reasons.push('Rights holder is not recorded.');
     if (rights.status !== 'owned' && rights.status !== 'public_domain' && !rights.licenseReference) {
