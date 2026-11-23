@@ -9,7 +9,8 @@ const calcVideo = ({ props }: { props: CourtVisionProps }) => {
   const spec: VideoSpec = VideoSpecSchema.parse(props.spec);
   return { durationInFrames: computeTimeline(spec).durationInFrames, fps: spec.fps, props: { spec } };
 };
-const calcCover = ({ props }: { props: CoverProps }) => ({ props: { cover: CoverSpecSchema.parse(props.cover) as CoverSpec } });
+// Stills default to fps 1; use 30 so the clip backdrop can seek to the exact freeze frame.
+const calcCover = ({ props }: { props: CoverProps }) => ({ fps: 30, props: { cover: CoverSpecSchema.parse(props.cover) as CoverSpec } });
 
 export const COMPOSITION_IDS = {
   tiresias: 'TiresiasCourtVision',

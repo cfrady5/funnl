@@ -1,6 +1,6 @@
 import { getTheme, type CoverSpec } from '@tiresias/core';
 import React from 'react';
-import { AbsoluteFill, Freeze, Img, OffthreadVideo } from 'remotion';
+import { AbsoluteFill, Img, OffthreadVideo, useVideoConfig } from 'remotion';
 import { EyeGlyph, HazardStripes } from './brand-mark';
 import { FitText, useFontsReady } from './text';
 
@@ -138,6 +138,7 @@ export const Cover: React.FC<CoverProps> = ({ cover }) => {
 /** Still from the rights-cleared clip, cropped on the featured player, toned toward the block colour. */
 const ClipStill: React.FC<{ cover: CoverSpec; blockColor: string }> = ({ cover, blockColor }) => {
   const b = cover.backdrop!;
+  const { fps } = useVideoConfig();
   const { block } = COVER_LAYOUT;
   const s = Math.max(block.width / b.sourceWidth, block.height / b.sourceHeight) * b.zoom;
   const w = b.sourceWidth * s;
@@ -147,9 +148,8 @@ const ClipStill: React.FC<{ cover: CoverSpec; blockColor: string }> = ({ cover, 
   return (
     <>
       <div style={{ position: 'absolute', left, top, width: w, height: h, filter: 'contrast(1.08) saturate(0.95)' }}>
-        <Freeze frame={Math.round(b.timeSec * 30)}>
-          <OffthreadVideo src={b.src} muted style={{ width: '100%', height: '100%' }} />
-        </Freeze>
+        {/* A <Still> renders frame 0 at fps 1, so seek with trimBefore in the composition's own fps (a 30 fps frame number overshoots the clip). */}
+        <OffthreadVideo src={b.src} muted trimBefore={Math.round(b.timeSec * fps)} style={{ width: '100%', height: '100%' }} />
       </div>
       {/* edge vignette in the block colour so the block still reads as a solid shape */}
       <div style={{ position: 'absolute', inset: 0, boxShadow: `inset 0 0 0 18px ${blockColor}, inset 0 0 120px 40px ${blockColor}99` }} />

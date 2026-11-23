@@ -84,7 +84,8 @@ export function coverFromVideoSpec(spec: VideoSpec, statValue: number | null): C
       sourceHeight: spec.source.height,
       focusX: spec.handler?.x ?? 0.5,
       focusY: Math.max(0, (spec.handler?.y ?? 0.55) - 0.09),
-      zoom: 3,
+      // Cap upscaling at ~1.6x the source pixels (the cover block is ~700 px tall), so 720p clips stay sharp.
+      zoom: Math.min(3, Math.max(1, Math.round(((1.6 * spec.source.height) / 700) * 100) / 100)),
     },
     kicker: spec.brand === 'tiresias' ? 'assists:' : 'turnovers:',
     statLine: null,
