@@ -127,6 +127,12 @@ describe('rights gate', () => {
     expect(checkRights({ ...base, expiresAt: '2020-01-01T00:00:00Z' }, 'social_publication').ok).toBe(false);
     expect(checkRights({ ...base, attributionRequired: true }, 'social_publication').ok).toBe(false);
   });
+  it('unknown rights allow an internal preview but never publication', () => {
+    const r = MediaRightsSchema.parse({ status: 'unknown' });
+    expect(checkRights(r, 'internal_preview').ok).toBe(true);
+    expect(checkRights(r, 'social_publication').ok).toBe(false);
+    expect(checkRights({ ...r, status: 'restricted' }, 'internal_preview').ok).toBe(false);
+  });
   it('internal preview does not need redistribution rights', () => {
     const r = MediaRightsSchema.parse({ status: 'permission_granted', allowedUses: ['internal_preview'] });
     expect(checkRights(r, 'internal_preview').ok).toBe(true);

@@ -53,6 +53,12 @@ export function checkRights(
 ): RightsDecision {
   const reasons: string[] = [];
   if (!rights) return { ok: false, reasons: ['No rights record exists for this asset.'] };
+  // Internal previews (never published) are allowed unless rights are known to be refused or expired.
+  if (use === 'internal_preview') {
+    if (rights.status === 'restricted') reasons.push('Rights status is "restricted".');
+    if (rights.status === 'expired' || (rights.expiresAt && new Date(rights.expiresAt).getTime() <= now.getTime())) reasons.push('Rights have expired.');
+    return { ok: reasons.length === 0, reasons };
+  }
   if (!CLEARED.includes(rights.status)) {
     reasons.push(`Rights status is "${rights.status}".`);
   }
